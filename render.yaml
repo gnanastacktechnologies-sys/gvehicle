@@ -20,3 +20,5 @@ services:
         value: gnanasekaran@gmail.com
       - key: ADMIN_PASSWORD
         value: Gnana@123
+      - key: SERVER_URL
+        value: https://gvehicle.onrender.com
