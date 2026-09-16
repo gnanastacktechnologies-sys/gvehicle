@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 import authRoutes from './routes/authRoutes.js';
 import userRoutes from './routes/userRoutes.js';
@@ -18,6 +20,9 @@ import { notFoundHandler, errorHandler } from './middleware/errorMiddleware.js';
 
 dotenv.config();
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const app = express();
 
 // Body Parser & CORS
@@ -32,7 +37,7 @@ app.use(
 );
 
 // 24/7 Health Check & Keep-Alive Endpoints
-app.get(['/', '/health', '/api/health'], (req, res) => {
+app.get(['/health', '/api/health'], (req, res) => {
   res.status(200).json({
     status: 'UP',
     uptime: `${Math.floor(process.uptime())}s`,
@@ -53,6 +58,21 @@ app.use('/api/maintenance', maintenanceRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/audit-logs', auditRoutes);
+
+// Serve Frontend Production Assets (Single Port 17203 Mode)
+const frontendDistPath = path.join(__dirname, '../frontend/dist');
+app.use(express.static(frontendDistPath));
+
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api')) {
+    return next();
+  }
+  res.sendFile(path.join(frontendDistPath, 'index.html'), (err) => {
+    if (err) {
+      next();
+    }
+  });
+});
 
 // Error Middlewares
 app.use(notFoundHandler);
