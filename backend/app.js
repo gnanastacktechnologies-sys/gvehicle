@@ -31,9 +31,14 @@ app.use(
   })
 );
 
-// Health check endpoint
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'UP', timestamp: new Date(), app: 'Gvehicle Fleet Management API' });
+// 24/7 Health Check & Keep-Alive Endpoints
+app.get(['/', '/health', '/api/health'], (req, res) => {
+  res.status(200).json({
+    status: 'UP',
+    uptime: `${Math.floor(process.uptime())}s`,
+    timestamp: new Date().toISOString(),
+    app: 'Gvehicle Fleet Management API (24/7 Keep-Alive Active)',
+  });
 });
 
 // API Routes
