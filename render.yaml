@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: gvehicle-backend
+    env: node
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: PORT
+        value: 17203
+      - key: MONGO_URI
+        sync: false
+      - key: JWT_SECRET
+        value: gvehicle_super_secret_jwt_key_2026_prod
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: ADMIN_NAME
+        value: Gnanasekaran
+      - key: ADMIN_EMAIL
+        value: gnanasekaran@gmail.com
+      - key: ADMIN_PASSWORD
+        value: Gnana@123
