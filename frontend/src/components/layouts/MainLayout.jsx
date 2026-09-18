@@ -56,7 +56,10 @@ const MainLayout = ({ children }) => {
         <div className="flex items-center space-x-3 px-5 h-16 border-b border-slate-100 flex-shrink-0">
           <img src="/logo.png" alt="Gvehicle" className="w-10 h-10 object-contain rounded-lg" />
           <div>
-            <h1 className="text-base font-extrabold text-slate-800 leading-tight">Gvehicle</h1>
+            <div className="flex items-center space-x-1.5">
+              <h1 className="text-base font-extrabold text-slate-800 leading-tight">Gvehicle</h1>
+              <span className="text-[9px] font-bold px-1.5 py-0.5 bg-indigo-50 text-indigo-600 rounded-md border border-indigo-100">v1.0.0</span>
+            </div>
             <span className="text-[10px] font-semibold tracking-wider text-indigo-600 uppercase">Fleet Manager</span>
           </div>
         </div>
@@ -120,6 +123,7 @@ const MainLayout = ({ children }) => {
           <div className="flex items-center space-x-2">
             <img src="/logo.png" alt="Gvehicle" className="w-8 h-8 object-contain rounded-lg" />
             <span className="text-base font-extrabold text-slate-800 tracking-tight">Gvehicle</span>
+            <span className="text-[9px] font-bold px-1.5 py-0.5 bg-indigo-50 text-indigo-600 rounded-md border border-indigo-100">v1.0.0</span>
           </div>
         </div>
 
@@ -159,6 +163,7 @@ const MainLayout = ({ children }) => {
               <div className="flex items-center space-x-2.5">
                 <img src="/logo.png" alt="Gvehicle" className="w-8 h-8 object-contain rounded-lg" />
                 <span className="font-bold text-slate-800">Gvehicle Fleet</span>
+                <span className="text-[9px] font-bold px-1.5 py-0.5 bg-indigo-50 text-indigo-600 rounded-md border border-indigo-100">v1.0.0</span>
               </div>
               <button
                 onClick={() => setMobileMenuOpen(false)}
@@ -223,7 +228,7 @@ const MainLayout = ({ children }) => {
       <main className="flex-1 md:pl-64 min-h-screen flex flex-col">
         <div className="p-4 sm:p-6 lg:p-8 flex-1 max-w-7xl w-full mx-auto">{children}</div>
         <footer className="py-4 text-center text-xs text-slate-400 font-medium border-t border-slate-200/60 mt-auto bg-white/50">
-          Copyright © 2026 Gnanastack Technologies. All rights reserved.
+          Copyright © 2026 Gnanastack Technologies. All rights reserved. • v1.0.0
         </footer>
       </main>
     </div>
