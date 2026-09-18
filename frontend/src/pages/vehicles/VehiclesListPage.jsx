@@ -76,7 +76,7 @@ const VehiclesListPage = () => {
       vehicleName: '',
       numberPlate: '',
       vehicleType: 'Car',
-      currentOdometer: 0,
+      currentOdometer: '',
       fuelType: 'Diesel',
       engineOilChangeIntervalKm: 5000,
       make: '',
@@ -118,17 +118,23 @@ const VehiclesListPage = () => {
     e.preventDefault();
     setFormError('');
 
-    if (!formData.vehicleName || !formData.numberPlate || !formData.vehicleType) {
-      setFormError('Vehicle Name, Number Plate, and Vehicle Type are required.');
+    if (!formData.vehicleName || !formData.numberPlate || !formData.vehicleType || formData.currentOdometer === '') {
+      setFormError('Vehicle Name, Number Plate, Vehicle Type, and Current Odometer are required.');
       return;
     }
+
+    const payload = {
+      ...formData,
+      currentOdometer: Number(formData.currentOdometer) || 0,
+      engineOilChangeIntervalKm: Number(formData.engineOilChangeIntervalKm) || 5000,
+    };
 
     try {
       setFormLoading(true);
       if (editingVehicle) {
-        await API.put(`/vehicles/${editingVehicle._id}`, formData);
+        await API.put(`/vehicles/${editingVehicle._id}`, payload);
       } else {
-        await API.post('/vehicles', formData);
+        await API.post('/vehicles', payload);
       }
       setModalOpen(false);
       fetchVehicles(pagination.page);
@@ -400,7 +406,8 @@ const VehiclesListPage = () => {
                 required
                 min="0"
                 value={formData.currentOdometer}
-                onChange={(e) => setFormData({ ...formData, currentOdometer: Number(e.target.value) })}
+                onChange={(e) => setFormData({ ...formData, currentOdometer: e.target.value })}
+                placeholder="e.g. 45230"
                 className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm"
               />
             </div>

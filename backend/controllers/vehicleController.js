@@ -216,6 +216,7 @@ export const updateVehicle = async (req, res, next) => {
       'vehicleName',
       'numberPlate',
       'vehicleType',
+      'currentOdometer',
       'make',
       'model',
       'year',
@@ -236,6 +237,8 @@ export const updateVehicle = async (req, res, next) => {
       if (req.body[field] !== undefined) {
         if (field === 'numberPlate') {
           vehicle[field] = req.body[field].toUpperCase().trim();
+        } else if (field === 'currentOdometer' || field === 'engineOilChangeIntervalKm' || field === 'lastOilChangeOdometer') {
+          vehicle[field] = Number(req.body[field]) || 0;
         } else {
           vehicle[field] = req.body[field];
         }
