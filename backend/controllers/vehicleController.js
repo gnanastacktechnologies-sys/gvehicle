@@ -161,7 +161,9 @@ export const createVehicle = async (req, res, next) => {
     }
 
     const currentOdoNum = Number(currentOdometer) || 0;
-    const initialLastOilOdo = lastOilChangeOdometer !== undefined ? Number(lastOilChangeOdometer) : currentOdoNum;
+    const initialLastOilOdo = (lastOilChangeOdometer !== undefined && lastOilChangeOdometer !== null && lastOilChangeOdometer !== '') 
+      ? Number(lastOilChangeOdometer) 
+      : currentOdoNum;
 
     const newVehicle = await Vehicle.create({
       vehicleName,
