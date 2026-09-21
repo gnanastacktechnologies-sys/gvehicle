@@ -7,6 +7,7 @@ import Modal from '../../components/common/Modal';
 import AlertBanner from '../../components/common/AlertBanner';
 import { formatKm, formatCurrency, formatDate, formatDateTime } from '../../utils/formatters';
 import { useAuth } from '../../context/AuthContext';
+import OdometerInputWithScan from '../../components/common/OdometerInputWithScan';
 import {
   FaCar,
   FaTachometerAlt,
@@ -419,14 +420,13 @@ const VehicleDetailPage = () => {
           </p>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">New Odometer Reading (KM) *</label>
-            <input
-              type="number"
+            <OdometerInputWithScan
+              label="New Odometer Reading (KM) *"
               required
-              min="0"
+              min={0}
               value={corrOdometer}
               onChange={(e) => setCorrOdometer(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm"
+              placeholder="e.g. 154850"
             />
           </div>
 
