@@ -22,17 +22,29 @@ const OdometerScannerModal = ({ isOpen, onClose, onConfirm, initialValue = '' })
     try {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         setCameraActive(false);
-        setError('Camera streaming requires HTTPS or localhost. Please upload a photo of the dashboard using the button below.');
+        setError('Camera streaming requires HTTPS or localhost. Please use the "Take Photo / Upload Image" button below to take a picture with your phone camera.');
         return;
       }
-      const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
-      });
+
+      let mediaStream;
+      try {
+        // Try requesting back camera with ideal constraint
+        mediaStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
+        });
+      } catch (err) {
+        console.warn('Ideal camera request failed, trying fallback standard video stream...', err);
+        // Fallback to basic video stream (works on laptops & desktop webcams)
+        mediaStream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+        });
+      }
+
       setStream(mediaStream);
     } catch (err) {
       console.warn('Camera access error:', err);
       setCameraActive(false);
-      setError('Could not access camera stream. Please allow camera permissions or upload an image of the odometer dashboard.');
+      setError('Could not access live camera. Please check camera permissions, privacy shutter, or use the "Take Photo / Upload Image" button below.');
     }
   };
 
@@ -173,7 +185,7 @@ const OdometerScannerModal = ({ isOpen, onClose, onConfirm, initialValue = '' })
         {/* Camera Live Feed View */}
         {!capturedImage && (
           <div className="space-y-3">
-            <div className="relative bg-slate-900 rounded-2xl overflow-hidden aspect-v-4/3 flex items-center justify-center border border-slate-800 shadow-inner min-h-[240px]">
+            <div className="relative bg-slate-900 rounded-2xl overflow-hidden aspect-[4/3] flex items-center justify-center border border-slate-800 shadow-inner min-h-[240px]">
               <video
                 ref={videoRef}
                 autoPlay
