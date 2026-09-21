@@ -32,17 +32,17 @@ const Modal = ({ isOpen, onClose, title, children, maxWidth = 'max-w-lg' }) => {
       />
 
       {/* Modal Container */}
-      <div className="flex min-h-full items-center justify-center p-4 text-center sm:p-6">
+      <div className="flex min-h-full items-center justify-center p-2 sm:p-4 text-center">
         <div
-          className={`relative w-full ${maxWidth} transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-2xl transition-all border border-slate-100`}
+          className={`relative w-full ${maxWidth} transform overflow-hidden rounded-2xl bg-white p-4 sm:p-6 text-left align-middle shadow-2xl transition-all border border-slate-100 my-auto`}
         >
           {/* Modal Header */}
-          <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-4">
-            <h3 className="text-lg font-semibold text-slate-800">{title}</h3>
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-3 sm:pb-4 sm:mb-4">
+            <h3 className="text-base sm:text-lg font-semibold text-slate-800">{title}</h3>
             <button
               type="button"
               onClick={onClose}
-              className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors focus:outline-hidden"
+              className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors focus:outline-hidden cursor-pointer"
               aria-label="Close dialog"
             >
               <FaTimes className="w-5 h-5" />
@@ -50,7 +50,7 @@ const Modal = ({ isOpen, onClose, title, children, maxWidth = 'max-w-lg' }) => {
           </div>
 
           {/* Modal Body */}
-          <div className="max-h-[75vh] overflow-y-auto pr-1">{children}</div>
+          <div className="max-h-[82vh] overflow-y-auto pr-0.5 space-y-2">{children}</div>
         </div>
       </div>
     </div>

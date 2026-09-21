@@ -533,9 +533,20 @@ const TripsListPage = () => {
             </select>
           </div>
 
-          <div className="p-3 bg-indigo-50/70 border border-indigo-100 rounded-xl flex justify-between items-center text-xs">
-            <span className="text-slate-600 font-medium">Starting Odometer:</span>
-            <span className="font-bold text-indigo-700 text-sm">{formatKm(startOdometer)}</span>
+          <div>
+            <OdometerInputWithScan
+              label="Starting Odometer Reading (KM) *"
+              required
+              min={0}
+              value={startOdometer}
+              onChange={(e) => setStartOdometer(e.target.value)}
+              placeholder="e.g. 154230"
+            />
+            {selectedVehicle && (
+              <p className="text-[11px] text-slate-400 mt-1">
+                Defaulted to vehicle's last recorded odometer ({formatKm(selectedVehicle.currentOdometer)}). Scan or edit if different.
+              </p>
+            )}
           </div>
 
           <div>

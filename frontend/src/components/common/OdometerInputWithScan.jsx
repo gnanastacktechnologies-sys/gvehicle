@@ -33,10 +33,10 @@ const OdometerInputWithScan = ({
           onClick={() => setScannerOpen(true)}
           disabled={disabled}
           title="Scan Odometer with Camera"
-          className="px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200/80 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition-all cursor-pointer flex-shrink-0 disabled:opacity-50"
+          className="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition-all cursor-pointer flex-shrink-0 disabled:opacity-50 shadow-sm shadow-indigo-100"
         >
-          <FaCamera className="w-3.5 h-3.5 text-indigo-600" />
-          <span className="hidden sm:inline">Scan 📷</span>
+          <FaCamera className="w-3.5 h-3.5 text-white" />
+          <span>Scan 📷</span>
         </button>
       </div>
 
