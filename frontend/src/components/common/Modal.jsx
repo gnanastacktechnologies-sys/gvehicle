@@ -1,6 +1,8 @@
 import React, { useEffect } from 'react';
 import { FaTimes } from 'react-icons/fa';
 
+let activeModalsCount = 0;
+
 const Modal = ({ isOpen, onClose, title, children, maxWidth = 'max-w-lg' }) => {
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -8,22 +10,33 @@ const Modal = ({ isOpen, onClose, title, children, maxWidth = 'max-w-lg' }) => {
         onClose();
       }
     };
-    window.addEventListener('keydown', handleKeyDown);
+
     if (isOpen) {
+      activeModalsCount++;
       document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
+      document.body.style.paddingRight = 'var(--scrollbar-width, 0px)';
+      document.documentElement.style.overflow = 'hidden';
+      window.addEventListener('keydown', handleKeyDown);
     }
+
     return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = 'unset';
+      if (isOpen) {
+        activeModalsCount = Math.max(0, activeModalsCount - 1);
+        window.removeEventListener('keydown', handleKeyDown);
+
+        if (activeModalsCount === 0) {
+          document.body.style.overflow = '';
+          document.body.style.paddingRight = '';
+          document.documentElement.style.overflow = '';
+        }
+      }
     };
   }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
+    <div className="fixed inset-0 z-50 overflow-y-auto overscroll-contain">
       {/* Backdrop */}
       <div
         className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity"
@@ -32,7 +45,7 @@ const Modal = ({ isOpen, onClose, title, children, maxWidth = 'max-w-lg' }) => {
       />
 
       {/* Modal Container */}
-      <div className="flex min-h-full items-center justify-center p-2 sm:p-4 text-center">
+      <div className="flex min-h-full items-center justify-center p-2 sm:p-4 text-center overscroll-contain">
         <div
           className={`relative w-full ${maxWidth} transform overflow-hidden rounded-2xl bg-white p-4 sm:p-6 text-left align-middle shadow-2xl transition-all border border-slate-100 my-auto`}
         >
@@ -50,7 +63,7 @@ const Modal = ({ isOpen, onClose, title, children, maxWidth = 'max-w-lg' }) => {
           </div>
 
           {/* Modal Body */}
-          <div className="max-h-[82vh] overflow-y-auto pr-0.5 space-y-2">{children}</div>
+          <div className="max-h-[80vh] overflow-y-auto overscroll-contain pr-0.5 space-y-2">{children}</div>
         </div>
       </div>
     </div>
