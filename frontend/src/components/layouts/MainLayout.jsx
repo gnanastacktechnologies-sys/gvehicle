@@ -20,6 +20,15 @@ import {
   FaUserCircle,
 } from 'react-icons/fa';
 
+const getInitials = (name) => {
+  if (!name) return 'US';
+  const parts = name.trim().split(' ').filter(Boolean);
+  if (parts.length >= 2) {
+    return (parts[0][0] + parts[1][0]).toUpperCase();
+  }
+  return name.slice(0, 2).toUpperCase();
+};
+
 const MainLayout = ({ children }) => {
   const { user, logout, hasPermission, isAdmin } = useAuth();
   const location = useLocation();
@@ -90,7 +99,7 @@ const MainLayout = ({ children }) => {
           <div className="flex items-center justify-between">
             <Link to="/profile" title="View Profile Settings" className="flex items-center space-x-3 overflow-hidden group cursor-pointer">
               <div className="p-2 bg-indigo-100 group-hover:bg-indigo-600 group-hover:text-white transition-all rounded-xl text-indigo-600 font-bold text-xs uppercase">
-                {user?.name?.slice(0, 2) || 'US'}
+                {getInitials(user?.name)}
               </div>
               <div className="truncate">
                 <p className="text-xs font-semibold text-slate-800 group-hover:text-indigo-600 transition-colors truncate">{user?.name}</p>
@@ -108,7 +117,7 @@ const MainLayout = ({ children }) => {
         </div>
       </aside>
 
-      {/* Mobile Top Header - Left Aligned Menu Bar with Profile & Logout */}
+      {/* Mobile Top Header - Left Aligned Menu Bar with 2-Letter Circle Profile Avatar */}
       <header className="md:hidden sticky top-0 z-40 bg-white border-b border-slate-200 px-3.5 h-16 flex items-center justify-between shadow-2xs">
         {/* Left Side: Menu Bar Icon & App Logo */}
         <div className="flex items-center space-x-2.5">
@@ -125,24 +134,19 @@ const MainLayout = ({ children }) => {
           </div>
         </div>
 
-        {/* Right Side: Profile Badge & Logout Button in Mobile View */}
-        <div className="flex items-center space-x-2">
+        {/* Right Side: 2-Letter Avatar Circle & Logout Button in Mobile View */}
+        <div className="flex items-center space-x-2.5">
           <Link
             to="/profile"
-            title="View Profile"
-            className="flex items-center space-x-1.5 bg-slate-100 hover:bg-indigo-50 border border-slate-200 px-2 py-1 rounded-full text-xs cursor-pointer transition-all"
+            title={`View Profile (${user?.name || 'User'})`}
+            className="w-9 h-9 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white flex items-center justify-center font-extrabold text-xs uppercase shadow-xs transition-all cursor-pointer ring-2 ring-indigo-100 active:scale-95"
           >
-            <div className="w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-[9px] uppercase">
-              {user?.name?.slice(0, 2) || 'US'}
-            </div>
-            <span className="font-semibold text-slate-700 max-w-[70px] truncate text-[11px]">
-              {user?.name?.split(' ')[0]}
-            </span>
+            {getInitials(user?.name)}
           </Link>
           <button
             onClick={logout}
             title="Logout"
-            className="p-2 text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-100 rounded-xl transition-all cursor-pointer"
+            className="p-2 text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-100 rounded-xl transition-all cursor-pointer active:scale-95"
           >
             <FaSignOutAlt className="w-4 h-4" />
           </button>
@@ -201,7 +205,7 @@ const MainLayout = ({ children }) => {
                   className="flex items-center space-x-2.5 overflow-hidden cursor-pointer group"
                 >
                   <div className="p-2 bg-indigo-100 text-indigo-700 font-bold text-xs uppercase rounded-xl flex-shrink-0 group-hover:bg-indigo-600 group-hover:text-white transition-all">
-                    {user?.name?.slice(0, 2) || 'US'}
+                    {getInitials(user?.name)}
                   </div>
                   <div className="truncate">
                     <p className="text-xs font-bold text-slate-800 group-hover:text-indigo-600 transition-colors truncate">{user?.name}</p>
