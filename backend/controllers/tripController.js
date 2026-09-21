@@ -51,7 +51,7 @@ export const startRide = async (req, res, next) => {
       notes: notes || '',
     });
 
-    await logAudit({
+    logAudit({
       user: req.user._id,
       action: 'TRIP_STARTED',
       module: 'TRIPS',
@@ -60,12 +60,16 @@ export const startRide = async (req, res, next) => {
       notes: `Started ride for ${vehicle.vehicleName} (${vehicle.numberPlate}) at ${initialStartOdo} KM.`,
     });
 
-    const populatedTrip = await Trip.findById(trip._id).populate('vehicle').populate('user', 'name email');
+    const responseData = {
+      ...trip.toObject(),
+      vehicle,
+      user: { _id: req.user._id, name: req.user.name, email: req.user.email },
+    };
 
     res.status(201).json({
       success: true,
       message: 'Ride started successfully',
-      data: populatedTrip,
+      data: responseData,
     });
   } catch (error) {
     next(error);
@@ -108,19 +112,18 @@ export const stopRide = async (req, res, next) => {
     trip.status = 'COMPLETED';
     if (notes) trip.notes = notes;
 
-    await trip.save();
+    const vehicle = trip.vehicle;
+    let prevOdo = vehicle ? vehicle.currentOdometer : 0;
 
-    // Update Vehicle Current Odometer
-    const vehicle = await Vehicle.findById(trip.vehicle._id);
+    if (vehicle && endOdoNum > vehicle.currentOdometer) {
+      vehicle.currentOdometer = endOdoNum;
+      await Promise.all([trip.save(), vehicle.save()]);
+    } else {
+      await trip.save();
+    }
+
     if (vehicle) {
-      const prevOdo = vehicle.currentOdometer;
-      // Rule 4: Completed trip updates vehicle current odometer
-      if (endOdoNum > vehicle.currentOdometer) {
-        vehicle.currentOdometer = endOdoNum;
-        await vehicle.save();
-      }
-
-      await logAudit({
+      logAudit({
         user: req.user._id,
         action: 'TRIP_COMPLETED',
         module: 'TRIPS',
@@ -131,12 +134,15 @@ export const stopRide = async (req, res, next) => {
       });
     }
 
-    const completedTrip = await Trip.findById(trip._id).populate('vehicle').populate('user', 'name email');
+    const responseData = {
+      ...trip.toObject(),
+      user: { _id: req.user._id, name: req.user.name, email: req.user.email },
+    };
 
     res.json({
       success: true,
       message: 'Ride completed successfully',
-      data: completedTrip,
+      data: responseData,
     });
   } catch (error) {
     next(error);

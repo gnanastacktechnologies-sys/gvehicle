@@ -62,9 +62,9 @@ const TripsListPage = () => {
 
   const { hasPermission, isAdmin } = useAuth();
 
-  const fetchTrips = async (page = 1) => {
+  const fetchTrips = async (page = 1, showSpinner = true) => {
     try {
-      setLoading(true);
+      if (showSpinner) setLoading(true);
       const params = {
         page,
         limit: 10,
@@ -83,7 +83,7 @@ const TripsListPage = () => {
     } catch (err) {
       console.error('Failed to fetch trips:', err);
     } finally {
-      setLoading(false);
+      if (showSpinner) setLoading(false);
     }
   };
 
@@ -172,7 +172,7 @@ const TripsListPage = () => {
       toast.success('Vehicle Ride Started Successfully! 🚗💨');
       setStartModalOpen(false);
       setSearchParams({});
-      fetchTrips(1);
+      fetchTrips(1, false);
       fetchActiveVehicles();
     } catch (err) {
       console.error('Start ride error:', err);
@@ -219,7 +219,7 @@ const TripsListPage = () => {
       toast.success('Vehicle Ride Completed & Saved! 🏁');
       setStopModalOpen(false);
       setSearchParams({});
-      fetchTrips(pagination.page);
+      fetchTrips(pagination.page, false);
       fetchActiveVehicles();
     } catch (err) {
       console.error('Stop ride error:', err);

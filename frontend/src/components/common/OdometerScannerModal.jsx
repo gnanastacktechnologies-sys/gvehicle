@@ -84,19 +84,33 @@ const OdometerScannerModal = ({ isOpen, onClose, onConfirm, initialValue = '' })
   }, [isOpen]);
 
 
+let cachedWorkerPromise = null;
+
+const getWorker = async () => {
+  if (!cachedWorkerPromise) {
+    cachedWorkerPromise = (async () => {
+      try {
+        const worker = await createWorker('eng');
+        await worker.setParameters({
+          tessedit_char_whitelist: '0123456789',
+        });
+        return worker;
+      } catch (err) {
+        cachedWorkerPromise = null;
+        throw err;
+      }
+    })();
+  }
+  return cachedWorkerPromise;
+};
+
   // Process image with OCR
   const processImage = async (imageSrc) => {
     setProcessing(true);
     setError('');
     try {
-      // Initialize Tesseract worker with digit whitelist
-      const worker = await createWorker('eng');
-      await worker.setParameters({
-        tessedit_char_whitelist: '0123456789',
-      });
-
+      const worker = await getWorker();
       const { data } = await worker.recognize(imageSrc);
-      await worker.terminate();
 
       // Extract all numeric sequences
       const cleanDigits = data.text.replace(/[^0-9]/g, '');
