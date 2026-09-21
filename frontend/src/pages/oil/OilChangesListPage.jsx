@@ -8,9 +8,10 @@ import { formatKm, formatCurrency, formatDate } from '../../utils/formatters';
 import { useAuth } from '../../context/AuthContext';
 import { FaPlus, FaOilCan, FaExclamationCircle, FaEdit, FaTrash } from 'react-icons/fa';
 import OdometerInputWithScan from '../../components/common/OdometerInputWithScan';
-
+import { useToast } from '../../context/ToastContext';
 
 const OilChangesListPage = () => {
+  const toast = useToast();
   const [changes, setChanges] = useState([]);
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -23,11 +24,9 @@ const OilChangesListPage = () => {
     vehicleId: '',
     date: new Date().toISOString().split('T')[0],
     odometer: '',
-    oilType: 'Synthetic 5W-30',
+    oilType: 'Synthetic',
     oilBrand: '',
-    quantity: '',
     cost: '',
-    serviceProvider: '',
     notes: '',
   });
   const [formError, setFormError] = useState('');
@@ -38,7 +37,14 @@ const OilChangesListPage = () => {
   const fetchOil = async (page = 1) => {
     try {
       setLoading(true);
-      const res = await API.get('/oil-changes', { params: { page, limit: 10, vehicleId } });
+      const params = {
+        page,
+        limit: 10,
+        vehicleId,
+        sortBy: 'date',
+        sortOrder: 'desc',
+      };
+      const res = await API.get('/oil-changes', { params });
       setChanges(res.data.data);
       setPagination(res.data.pagination);
     } catch (err) {
@@ -50,7 +56,7 @@ const OilChangesListPage = () => {
 
   const fetchVehicles = async () => {
     try {
-      const res = await API.get('/vehicles?limit=100');
+      const res = await API.get('/vehicles?status=ACTIVE&limit=100');
       setVehicles(res.data.data);
     } catch (err) {
       console.error('Failed to fetch vehicles:', err);
@@ -64,16 +70,14 @@ const OilChangesListPage = () => {
 
   const handleOpenAddModal = () => {
     setEditingChange(null);
-    const firstV = vehicles[0];
+    const defaultV = vehicles[0];
     setFormData({
-      vehicleId: firstV ? firstV._id : '',
+      vehicleId: defaultV ? defaultV._id : '',
       date: new Date().toISOString().split('T')[0],
-      odometer: firstV ? firstV.currentOdometer : '',
-      oilType: 'Synthetic 5W-30',
+      odometer: defaultV ? defaultV.currentOdometer : '',
+      oilType: 'Synthetic',
       oilBrand: '',
-      quantity: 5,
       cost: '',
-      serviceProvider: '',
       notes: '',
     });
     setFormError('');
@@ -83,14 +87,12 @@ const OilChangesListPage = () => {
   const handleOpenEditModal = (o) => {
     setEditingChange(o);
     setFormData({
-      vehicleId: o.vehicle?._id || o.vehicle || '',
-      date: o.date ? o.date.split('T')[0] : new Date().toISOString().split('T')[0],
-      odometer: o.odometer,
-      oilType: o.oilType || 'Synthetic 5W-30',
+      vehicleId: o.vehicle?._id || '',
+      date: o.date ? new Date(o.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+      odometer: o.odometer !== undefined ? o.odometer : '',
+      oilType: o.oilType || 'Synthetic',
       oilBrand: o.oilBrand || '',
-      quantity: o.quantity || 5,
-      cost: o.cost || '',
-      serviceProvider: o.serviceProvider || '',
+      cost: o.cost !== undefined ? o.cost : '',
       notes: o.notes || '',
     });
     setFormError('');
@@ -101,9 +103,11 @@ const OilChangesListPage = () => {
     if (!window.confirm('Are you sure you want to delete this oil change record?')) return;
     try {
       await API.delete(`/oil-changes/${id}`);
+      toast.success('Engine oil change record deleted.');
       fetchOil(pagination.page);
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to delete oil change log.');
+      const msg = err.response?.data?.message || 'Failed to delete oil change log.';
+      toast.error(msg);
     }
   };
 
@@ -126,14 +130,18 @@ const OilChangesListPage = () => {
 
       if (editingChange) {
         await API.put(`/oil-changes/${editingChange._id}`, payload);
+        toast.success('Engine oil change record updated! 🛢️');
       } else {
         await API.post('/oil-changes', payload);
+        toast.success('Engine oil change log saved! 🛢️');
       }
       setModalOpen(false);
       fetchOil(pagination.page);
     } catch (err) {
       console.error('Oil change save error:', err);
-      setFormError(err.response?.data?.message || 'Failed to save oil change.');
+      const msg = err.response?.data?.message || 'Failed to save oil change.';
+      setFormError(msg);
+      toast.error(msg);
     } finally {
       setFormLoading(false);
     }

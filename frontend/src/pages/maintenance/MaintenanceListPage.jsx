@@ -8,9 +8,10 @@ import { formatKm, formatCurrency, formatDate } from '../../utils/formatters';
 import { useAuth } from '../../context/AuthContext';
 import { FaPlus, FaWrench, FaExclamationCircle, FaEdit, FaTrash } from 'react-icons/fa';
 import OdometerInputWithScan from '../../components/common/OdometerInputWithScan';
-
+import { useToast } from '../../context/ToastContext';
 
 const MaintenanceListPage = () => {
+  const toast = useToast();
   const [records, setRecords] = useState([]);
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -53,7 +54,7 @@ const MaintenanceListPage = () => {
       setRecords(res.data.data);
       setPagination(res.data.pagination);
     } catch (err) {
-      console.error('Failed to fetch maintenance logs:', err);
+      console.error('Failed to fetch maintenance records:', err);
     } finally {
       setLoading(false);
     }
@@ -61,7 +62,7 @@ const MaintenanceListPage = () => {
 
   const fetchVehicles = async () => {
     try {
-      const res = await API.get('/vehicles?limit=100');
+      const res = await API.get('/vehicles?status=ACTIVE&limit=100');
       setVehicles(res.data.data);
     } catch (err) {
       console.error('Failed to fetch vehicles:', err);
@@ -75,12 +76,12 @@ const MaintenanceListPage = () => {
 
   const handleOpenAddModal = () => {
     setEditingRecord(null);
-    const firstV = vehicles[0];
+    const defaultV = vehicles[0];
     setFormData({
-      vehicleId: firstV ? firstV._id : '',
+      vehicleId: defaultV ? defaultV._id : '',
       maintenanceType: 'General Service',
       date: new Date().toISOString().split('T')[0],
-      odometer: firstV ? firstV.currentOdometer : '',
+      odometer: defaultV ? defaultV.currentOdometer : '',
       description: '',
       cost: '',
       serviceProvider: '',
@@ -93,12 +94,12 @@ const MaintenanceListPage = () => {
   const handleOpenEditModal = (m) => {
     setEditingRecord(m);
     setFormData({
-      vehicleId: m.vehicle?._id || m.vehicle || '',
+      vehicleId: m.vehicle?._id || '',
       maintenanceType: m.maintenanceType || 'General Service',
-      date: m.date ? m.date.split('T')[0] : new Date().toISOString().split('T')[0],
-      odometer: m.odometer,
+      date: m.date ? new Date(m.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+      odometer: m.odometer !== undefined ? m.odometer : '',
       description: m.description || '',
-      cost: m.cost || '',
+      cost: m.cost !== undefined ? m.cost : '',
       serviceProvider: m.serviceProvider || '',
       notes: m.notes || '',
     });
@@ -110,9 +111,11 @@ const MaintenanceListPage = () => {
     if (!window.confirm('Are you sure you want to delete this maintenance record?')) return;
     try {
       await API.delete(`/maintenance/${id}`);
+      toast.success('Maintenance record deleted successfully.');
       fetchRecords(pagination.page);
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to delete maintenance log.');
+      const msg = err.response?.data?.message || 'Failed to delete maintenance log.';
+      toast.error(msg);
     }
   };
 
@@ -135,14 +138,18 @@ const MaintenanceListPage = () => {
 
       if (editingRecord) {
         await API.put(`/maintenance/${editingRecord._id}`, payload);
+        toast.success('Maintenance service record updated! 🔧');
       } else {
         await API.post('/maintenance', payload);
+        toast.success('Maintenance service log recorded! 🔧');
       }
       setModalOpen(false);
       fetchRecords(pagination.page);
     } catch (err) {
       console.error('Maintenance save error:', err);
-      setFormError(err.response?.data?.message || 'Failed to save maintenance.');
+      const msg = err.response?.data?.message || 'Failed to save maintenance.';
+      setFormError(msg);
+      toast.error(msg);
     } finally {
       setFormLoading(false);
     }

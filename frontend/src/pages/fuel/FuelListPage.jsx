@@ -7,9 +7,11 @@ import { formatKm, formatCurrency, formatDate } from '../../utils/formatters';
 import { useAuth } from '../../context/AuthContext';
 import { FaPlus, FaGasPump, FaExclamationCircle, FaEdit, FaTrash } from 'react-icons/fa';
 import OdometerInputWithScan from '../../components/common/OdometerInputWithScan';
+import { useToast } from '../../context/ToastContext';
 
 
 const FuelListPage = () => {
+  const toast = useToast();
   const [fuelEntries, setFuelEntries] = useState([]);
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -73,12 +75,12 @@ const FuelListPage = () => {
 
   const handleOpenAddModal = () => {
     setEditingEntry(null);
-    const firstV = vehicles[0];
+    const defaultV = vehicles[0];
     setFormData({
-      vehicleId: firstV ? firstV._id : '',
+      vehicleId: defaultV ? defaultV._id : '',
       date: new Date().toISOString().split('T')[0],
-      odometer: firstV ? firstV.currentOdometer : 0,
-      fuelType: firstV ? firstV.fuelType : 'Diesel',
+      odometer: defaultV ? defaultV.currentOdometer : '',
+      fuelType: defaultV ? defaultV.fuelType : 'Diesel',
       quantity: '',
       totalAmount: '',
       fuelStation: '',
@@ -88,17 +90,17 @@ const FuelListPage = () => {
     setModalOpen(true);
   };
 
-  const handleOpenEditModal = (f) => {
-    setEditingEntry(f);
+  const handleOpenEditModal = (entry) => {
+    setEditingEntry(entry);
     setFormData({
-      vehicleId: f.vehicle?._id || f.vehicle || '',
-      date: f.date ? f.date.split('T')[0] : new Date().toISOString().split('T')[0],
-      odometer: f.odometer,
-      fuelType: f.fuelType || 'Diesel',
-      quantity: f.quantity,
-      totalAmount: f.totalAmount,
-      fuelStation: f.fuelStation || '',
-      notes: f.notes || '',
+      vehicleId: entry.vehicle?._id || '',
+      date: entry.date ? new Date(entry.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+      odometer: entry.odometer !== undefined ? entry.odometer : '',
+      fuelType: entry.fuelType || 'Diesel',
+      quantity: entry.quantity !== undefined ? entry.quantity : '',
+      totalAmount: entry.totalAmount !== undefined ? entry.totalAmount : '',
+      fuelStation: entry.fuelStation || '',
+      notes: entry.notes || '',
     });
     setFormError('');
     setModalOpen(true);
@@ -108,9 +110,11 @@ const FuelListPage = () => {
     if (!window.confirm('Are you sure you want to delete this fuel record?')) return;
     try {
       await API.delete(`/fuel/${id}`);
+      toast.success('Fuel log entry deleted successfully.');
       fetchFuel(pagination.page);
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to delete fuel record.');
+      const msg = err.response?.data?.message || 'Failed to delete fuel record.';
+      toast.error(msg);
     }
   };
 
@@ -149,14 +153,18 @@ const FuelListPage = () => {
 
       if (editingEntry) {
         await API.put(`/fuel/${editingEntry._id}`, payload);
+        toast.success('Fuel log entry updated successfully! ⛽');
       } else {
         await API.post('/fuel', payload);
+        toast.success('New fuel log entry recorded successfully! ⛽');
       }
       setModalOpen(false);
       fetchFuel(pagination.page);
     } catch (err) {
       console.error('Fuel add/edit error:', err);
-      setFormError(err.response?.data?.message || 'Failed to save fuel entry.');
+      const msg = err.response?.data?.message || 'Failed to save fuel entry.';
+      setFormError(msg);
+      toast.error(msg);
     } finally {
       setFormLoading(false);
     }

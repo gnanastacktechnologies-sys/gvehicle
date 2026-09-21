@@ -9,9 +9,11 @@ import { formatKm, formatDate, formatDateTime } from '../../utils/formatters';
 import { useAuth } from '../../context/AuthContext';
 import { FaPlayCircle, FaStopCircle, FaExclamationCircle, FaPlus, FaUser, FaBriefcase, FaEdit, FaTrash } from 'react-icons/fa';
 import OdometerInputWithScan from '../../components/common/OdometerInputWithScan';
+import { useToast } from '../../context/ToastContext';
 
 
 const TripsListPage = () => {
+  const toast = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
   const [trips, setTrips] = useState([]);
   const [vehicles, setVehicles] = useState([]);
@@ -167,13 +169,16 @@ const TripsListPage = () => {
         tripType,
         notes: startNotes,
       });
+      toast.success('Vehicle Ride Started Successfully! 🚗💨');
       setStartModalOpen(false);
       setSearchParams({});
       fetchTrips(1);
       fetchActiveVehicles();
     } catch (err) {
       console.error('Start ride error:', err);
-      setStartError(err.response?.data?.message || 'Failed to start ride.');
+      const msg = err.response?.data?.message || 'Failed to start ride.';
+      setStartError(msg);
+      toast.error(msg);
     } finally {
       setStartLoading(false);
     }
@@ -199,9 +204,9 @@ const TripsListPage = () => {
 
     // Rule 2: Ending odometer MUST be >= starting odometer
     if (endOdoNum < activeTripToStop.startOdometer) {
-      setStopError(
-        `Ending odometer (${endOdoNum} KM) cannot be lower than starting odometer (${activeTripToStop.startOdometer} KM).`
-      );
+      const msg = `Ending odometer (${endOdoNum} KM) cannot be lower than starting odometer (${activeTripToStop.startOdometer} KM).`;
+      setStopError(msg);
+      toast.warning(msg);
       return;
     }
 
@@ -211,13 +216,16 @@ const TripsListPage = () => {
         endOdometer: endOdoNum,
         notes: stopNotes,
       });
+      toast.success('Vehicle Ride Completed & Saved! 🏁');
       setStopModalOpen(false);
       setSearchParams({});
       fetchTrips(pagination.page);
       fetchActiveVehicles();
     } catch (err) {
       console.error('Stop ride error:', err);
-      setStopError(err.response?.data?.message || 'Failed to stop ride.');
+      const msg = err.response?.data?.message || 'Failed to stop ride.';
+      setStopError(msg);
+      toast.error(msg);
     } finally {
       setStopLoading(false);
     }
@@ -242,11 +250,14 @@ const TripsListPage = () => {
     try {
       setEditTripLoading(true);
       await API.put(`/trips/${editingTrip._id}`, editFormData);
+      toast.success('Trip details updated successfully!');
       setEditTripModalOpen(false);
       fetchTrips(pagination.page);
     } catch (err) {
       console.error('Edit trip error:', err);
-      setEditTripError(err.response?.data?.message || 'Failed to update trip record.');
+      const msg = err.response?.data?.message || 'Failed to update trip record.';
+      setEditTripError(msg);
+      toast.error(msg);
     } finally {
       setEditTripLoading(false);
     }
@@ -256,9 +267,11 @@ const TripsListPage = () => {
     if (!window.confirm('Are you sure you want to delete this trip record?')) return;
     try {
       await API.delete(`/trips/${id}`);
+      toast.success('Trip record deleted.');
       fetchTrips(pagination.page);
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to delete trip.');
+      const msg = err.response?.data?.message || 'Failed to delete trip.';
+      toast.error(msg);
     }
   };
 

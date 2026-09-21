@@ -8,9 +8,10 @@ import { formatCurrency, formatDate, formatKm } from '../../utils/formatters';
 import { useAuth } from '../../context/AuthContext';
 import { FaPlus, FaCircleNotch, FaExclamationCircle, FaEdit, FaTrash } from 'react-icons/fa';
 import OdometerInputWithScan from '../../components/common/OdometerInputWithScan';
-
+import { useToast } from '../../context/ToastContext';
 
 const TyresListPage = () => {
+  const toast = useToast();
   const [tyres, setTyres] = useState([]);
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -50,7 +51,7 @@ const TyresListPage = () => {
 
   const fetchVehicles = async () => {
     try {
-      const res = await API.get('/vehicles?limit=100');
+      const res = await API.get('/vehicles?status=ACTIVE&limit=100');
       setVehicles(res.data.data);
     } catch (err) {
       console.error('Failed to fetch vehicles:', err);
@@ -64,16 +65,16 @@ const TyresListPage = () => {
 
   const handleOpenAddModal = () => {
     setEditingTyre(null);
-    const firstV = vehicles[0];
+    const defaultV = vehicles[0];
     setFormData({
-      vehicleId: firstV ? firstV._id : '',
+      vehicleId: defaultV ? defaultV._id : '',
       installationDate: new Date().toISOString().split('T')[0],
-      brand: 'Michelin',
-      model: 'Primacy 4ST',
+      brand: '',
+      model: '',
       position: 'All Four',
       quantity: 4,
       cost: '',
-      odometer: firstV ? firstV.currentOdometer : 0,
+      odometer: defaultV ? defaultV.currentOdometer : '',
       notes: '',
     });
     setFormError('');
@@ -83,14 +84,14 @@ const TyresListPage = () => {
   const handleOpenEditModal = (t) => {
     setEditingTyre(t);
     setFormData({
-      vehicleId: t.vehicle?._id || t.vehicle || '',
-      installationDate: t.installationDate ? t.installationDate.split('T')[0] : new Date().toISOString().split('T')[0],
+      vehicleId: t.vehicle?._id || '',
+      installationDate: t.installationDate ? new Date(t.installationDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
       brand: t.brand || '',
       model: t.model || '',
       position: t.position || 'All Four',
       quantity: t.quantity || 4,
-      cost: t.cost || '',
-      odometer: t.odometer || t.vehicle?.currentOdometer || '',
+      cost: t.cost !== undefined ? t.cost : '',
+      odometer: t.odometer !== undefined ? t.odometer : '',
       notes: t.notes || '',
     });
     setFormError('');
@@ -101,9 +102,11 @@ const TyresListPage = () => {
     if (!window.confirm('Are you sure you want to delete this tyre record?')) return;
     try {
       await API.delete(`/tyres/${id}`);
+      toast.success('Tyre record deleted successfully.');
       fetchTyres(pagination.page);
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to delete tyre record.');
+      const msg = err.response?.data?.message || 'Failed to delete tyre record.';
+      toast.error(msg);
     }
   };
 
@@ -136,14 +139,18 @@ const TyresListPage = () => {
 
       if (editingTyre) {
         await API.put(`/tyres/${editingTyre._id}`, payload);
+        toast.success('Tyre replacement record updated! 🛞');
       } else {
         await API.post('/tyres', payload);
+        toast.success('Tyre replacement record saved! 🛞');
       }
       setModalOpen(false);
       fetchTyres(pagination.page);
     } catch (err) {
       console.error('Tyre add/edit error:', err);
-      setFormError(err.response?.data?.message || 'Failed to save tyre log.');
+      const msg = err.response?.data?.message || 'Failed to save tyre log.';
+      setFormError(msg);
+      toast.error(msg);
     } finally {
       setFormLoading(false);
     }
