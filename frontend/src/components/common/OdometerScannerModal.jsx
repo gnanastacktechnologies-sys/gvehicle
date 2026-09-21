@@ -298,9 +298,20 @@ const getWorker = async () => {
                 <FaEdit className="absolute right-3.5 top-3.5 text-slate-400 w-4 h-4 pointer-events-none" />
               </div>
 
-              <p className="text-[11px] text-slate-500">
-                Check if the extracted number matches your meter. You can type to correct any digit.
+              <p className="text-[11px] text-slate-500 leading-snug">
+                Check if the extracted number matches your meter display. You can type to correct any digit.
               </p>
+
+              {editedValue.length >= 6 && (
+                <button
+                  type="button"
+                  onClick={() => setEditedValue(editedValue.slice(0, -1))}
+                  className="w-full text-left text-[11px] font-bold text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-3 py-1.5 rounded-xl flex items-center justify-between cursor-pointer transition-colors"
+                >
+                  <span>🔴 Is 6th digit RED (Tenths)? Click to trim 6th digit</span>
+                  <span className="bg-amber-200/80 px-2 py-0.5 rounded text-[10px] font-mono">Use {editedValue.slice(0, -1)} KM</span>
+                </button>
+              )}
             </div>
 
             <div className="flex justify-end space-x-3 pt-2 border-t border-slate-100">
