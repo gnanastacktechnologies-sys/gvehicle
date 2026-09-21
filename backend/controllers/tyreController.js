@@ -75,11 +75,8 @@ export const createTyreRecord = async (req, res, next) => {
       notes: notes || '',
     });
 
-    // Update vehicle tyre installation dates & current odometer
+    // Update vehicle tyre installation date (without mutating master vehicle currentOdometer)
     vehicle.tyreInstallationDate = installationDate || new Date();
-    if (odoNum > vehicle.currentOdometer) {
-      vehicle.currentOdometer = odoNum;
-    }
     await vehicle.save();
 
     await logAudit({

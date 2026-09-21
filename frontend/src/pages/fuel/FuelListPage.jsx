@@ -378,6 +378,9 @@ const FuelListPage = () => {
               onChange={(e) => setFormData({ ...formData, odometer: e.target.value })}
               placeholder="e.g. 154230"
             />
+            <p className="text-[11px] text-slate-400 mt-1">
+              Records odometer reading at refueling time for history logs (doesn't alter master ride trip odometer).
+            </p>
           </div>
 
           <div className="grid grid-cols-2 gap-3">

@@ -371,6 +371,9 @@ const MaintenanceListPage = () => {
               onChange={(e) => setFormData({ ...formData, odometer: e.target.value })}
               placeholder="e.g. 154230"
             />
+            <p className="text-[11px] text-slate-400 mt-1">
+              Records odometer reading at time of service for maintenance history logs.
+            </p>
           </div>
 
           <div>

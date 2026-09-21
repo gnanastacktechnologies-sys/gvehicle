@@ -105,10 +105,7 @@ export const createMaintenanceRecord = async (req, res, next) => {
       notes: notes || '',
     });
 
-    if (odoNum > vehicle.currentOdometer) {
-      vehicle.currentOdometer = odoNum;
-      await vehicle.save();
-    }
+    // Note: Maintenance odometer is recorded on the maintenance record; master vehicle currentOdometer remains unchanged.
 
     await logAudit({
       user: req.user._id,

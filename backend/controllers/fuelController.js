@@ -107,11 +107,7 @@ export const createFuelEntry = async (req, res, next) => {
       notes: notes || '',
     });
 
-    // Update vehicle odometer if higher
-    if (odoNum > vehicle.currentOdometer) {
-      vehicle.currentOdometer = odoNum;
-      await vehicle.save();
-    }
+    // Note: Odometer is recorded on the fuel document, master vehicle currentOdometer remains unchanged by refuel operations.
 
     await logAudit({
       user: req.user._id,

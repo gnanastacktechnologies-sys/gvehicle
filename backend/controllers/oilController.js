@@ -84,12 +84,9 @@ export const createOilChange = async (req, res, next) => {
       notes: notes || '',
     });
 
-    // Rule 5: Update Vehicle Last Oil Change state
+    // Update Vehicle Last Oil Change tracking state (without mutating vehicle master currentOdometer)
     vehicle.lastOilChangeOdometer = odoNum;
     vehicle.lastOilChangeDate = date || new Date();
-    if (odoNum > vehicle.currentOdometer) {
-      vehicle.currentOdometer = odoNum;
-    }
     await vehicle.save();
 
     await logAudit({
