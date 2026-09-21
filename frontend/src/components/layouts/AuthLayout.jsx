@@ -9,7 +9,6 @@ const AuthLayout = ({ children }) => {
         </div>
         <div className="flex items-center justify-center space-x-2">
           <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">Gvehicle</h2>
-          <span className="text-[10px] font-bold px-2 py-0.5 bg-indigo-50 text-indigo-600 rounded-full border border-indigo-200/80">v1.0.0</span>
         </div>
         <p className="mt-1 text-xs text-slate-500 font-medium">
           Vehicle & Fleet Management System
@@ -21,7 +20,7 @@ const AuthLayout = ({ children }) => {
           {children}
         </div>
         <p className="mt-6 text-center text-xs text-slate-400 font-medium">
-          Copyright © 2026 Gnanastack Technologies. All rights reserved. • v1.0.0
+          Copyright © 2026 Gnanastack Technologies. All rights reserved.
         </p>
       </div>
     </div>

@@ -58,12 +58,12 @@ export const getFuelEntries = async (req, res, next) => {
 
 export const createFuelEntry = async (req, res, next) => {
   try {
-    const { vehicleId, date, odometer, fuelType, quantity, pricePerLitre, fuelStation, notes } = req.body;
+    const { vehicleId, date, odometer, fuelType, quantity, pricePerLitre, totalAmount: reqTotalAmount, fuelStation, notes } = req.body;
 
-    if (!vehicleId || odometer === undefined || !quantity || pricePerLitre === undefined) {
+    if (!vehicleId || odometer === undefined || !quantity || (pricePerLitre === undefined && reqTotalAmount === undefined)) {
       return res.status(400).json({
         success: false,
-        message: 'Vehicle, Odometer, Quantity and Price per Litre are required.',
+        message: 'Vehicle, Odometer, Quantity and Total Price are required.',
       });
     }
 
@@ -73,16 +73,25 @@ export const createFuelEntry = async (req, res, next) => {
     }
 
     const qtyNum = Number(quantity);
-    const priceNum = Number(pricePerLitre);
     if (qtyNum <= 0) {
       return res.status(400).json({ success: false, message: 'Fuel quantity must be greater than 0.' });
     }
-    if (priceNum < 0) {
-      return res.status(400).json({ success: false, message: 'Price per litre cannot be negative.' });
+
+    let totalAmount = 0;
+    let computedPricePerLitre = 0;
+
+    if (reqTotalAmount !== undefined && reqTotalAmount !== '') {
+      totalAmount = Number(reqTotalAmount);
+      computedPricePerLitre = Number((totalAmount / qtyNum).toFixed(2));
+    } else {
+      computedPricePerLitre = Number(pricePerLitre);
+      totalAmount = Number((qtyNum * computedPricePerLitre).toFixed(2));
     }
 
-    // Automatically calculate Total Amount
-    const totalAmount = Number((qtyNum * priceNum).toFixed(2));
+    if (totalAmount < 0) {
+      return res.status(400).json({ success: false, message: 'Total amount cannot be negative.' });
+    }
+
     const odoNum = Number(odometer);
 
     const fuelEntry = await FuelEntry.create({
@@ -92,7 +101,7 @@ export const createFuelEntry = async (req, res, next) => {
       odometer: odoNum,
       fuelType: fuelType || vehicle.fuelType || 'Diesel',
       quantity: qtyNum,
-      pricePerLitre: priceNum,
+      pricePerLitre: computedPricePerLitre,
       totalAmount,
       fuelStation: fuelStation || '',
       notes: notes || '',
@@ -133,18 +142,25 @@ export const updateFuelEntry = async (req, res, next) => {
     }
 
     const previousValue = entry.toObject();
-    const { date, odometer, fuelType, quantity, pricePerLitre, fuelStation, notes } = req.body;
+    const { date, odometer, fuelType, quantity, pricePerLitre, totalAmount, fuelStation, notes } = req.body;
 
     if (date) entry.date = date;
     if (odometer !== undefined) entry.odometer = Number(odometer);
     if (fuelType) entry.fuelType = fuelType;
     if (quantity !== undefined) entry.quantity = Number(quantity);
-    if (pricePerLitre !== undefined) entry.pricePerLitre = Number(pricePerLitre);
+
+    if (totalAmount !== undefined && totalAmount !== '') {
+      entry.totalAmount = Number(totalAmount);
+      if (entry.quantity > 0) {
+        entry.pricePerLitre = Number((entry.totalAmount / entry.quantity).toFixed(2));
+      }
+    } else if (pricePerLitre !== undefined) {
+      entry.pricePerLitre = Number(pricePerLitre);
+      entry.totalAmount = Number((entry.quantity * entry.pricePerLitre).toFixed(2));
+    }
+
     if (fuelStation !== undefined) entry.fuelStation = fuelStation;
     if (notes !== undefined) entry.notes = notes;
-
-    // Recalculate total
-    entry.totalAmount = Number((entry.quantity * entry.pricePerLitre).toFixed(2));
 
     await entry.save();
 
@@ -167,6 +183,7 @@ export const updateFuelEntry = async (req, res, next) => {
     next(error);
   }
 };
+
 
 export const deleteFuelEntry = async (req, res, next) => {
   try {

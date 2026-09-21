@@ -6,7 +6,7 @@ import VehicleIcon from '../../components/common/VehicleIcon';
 import Badge from '../../components/common/Badge';
 import { formatKm, formatCurrency, formatDate } from '../../utils/formatters';
 import { useAuth } from '../../context/AuthContext';
-import { FaPlus, FaOilCan, FaExclamationCircle } from 'react-icons/fa';
+import { FaPlus, FaOilCan, FaExclamationCircle, FaEdit, FaTrash } from 'react-icons/fa';
 
 const OilChangesListPage = () => {
   const [changes, setChanges] = useState([]);
@@ -16,6 +16,7 @@ const OilChangesListPage = () => {
   const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, totalPages: 1 });
 
   const [modalOpen, setModalOpen] = useState(false);
+  const [editingChange, setEditingChange] = useState(null);
   const [formData, setFormData] = useState({
     vehicleId: '',
     date: new Date().toISOString().split('T')[0],
@@ -30,7 +31,7 @@ const OilChangesListPage = () => {
   const [formError, setFormError] = useState('');
   const [formLoading, setFormLoading] = useState(false);
 
-  const { hasPermission } = useAuth();
+  const { hasPermission, isAdmin } = useAuth();
 
   const fetchOil = async (page = 1) => {
     try {
@@ -59,7 +60,8 @@ const OilChangesListPage = () => {
     fetchVehicles();
   }, [vehicleId]);
 
-  const handleOpenModal = () => {
+  const handleOpenAddModal = () => {
+    setEditingChange(null);
     const firstV = vehicles[0];
     setFormData({
       vehicleId: firstV ? firstV._id : '',
@@ -76,6 +78,33 @@ const OilChangesListPage = () => {
     setModalOpen(true);
   };
 
+  const handleOpenEditModal = (o) => {
+    setEditingChange(o);
+    setFormData({
+      vehicleId: o.vehicle?._id || o.vehicle || '',
+      date: o.date ? o.date.split('T')[0] : new Date().toISOString().split('T')[0],
+      odometer: o.odometer,
+      oilType: o.oilType || 'Synthetic 5W-30',
+      oilBrand: o.oilBrand || '',
+      quantity: o.quantity || 5,
+      cost: o.cost || '',
+      serviceProvider: o.serviceProvider || '',
+      notes: o.notes || '',
+    });
+    setFormError('');
+    setModalOpen(true);
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this oil change record?')) return;
+    try {
+      await API.delete(`/oil-changes/${id}`);
+      fetchOil(pagination.page);
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to delete oil change log.');
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setFormError('');
@@ -87,16 +116,22 @@ const OilChangesListPage = () => {
 
     try {
       setFormLoading(true);
-      await API.post('/oil-changes', {
+      const payload = {
         ...formData,
         odometer: Number(formData.odometer),
         cost: Number(formData.cost) || 0,
-      });
+      };
+
+      if (editingChange) {
+        await API.put(`/oil-changes/${editingChange._id}`, payload);
+      } else {
+        await API.post('/oil-changes', payload);
+      }
       setModalOpen(false);
-      fetchOil(1);
+      fetchOil(pagination.page);
     } catch (err) {
-      console.error('Oil change add error:', err);
-      setFormError(err.response?.data?.message || 'Failed to record oil change.');
+      console.error('Oil change save error:', err);
+      setFormError(err.response?.data?.message || 'Failed to save oil change.');
     } finally {
       setFormLoading(false);
     }
@@ -136,6 +171,31 @@ const OilChangesListPage = () => {
       accessor: 'cost',
       cell: (o) => <span className="text-xs font-bold text-slate-800">{formatCurrency(o.cost)}</span>,
     },
+    {
+      header: 'Actions',
+      cell: (o) => (
+        <div className="flex items-center space-x-2">
+          {(hasPermission('oil.edit') || isAdmin) && (
+            <button
+              onClick={() => handleOpenEditModal(o)}
+              className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+              title="Edit Oil Log"
+            >
+              <FaEdit className="w-4 h-4" />
+            </button>
+          )}
+          {(hasPermission('oil.delete') || isAdmin) && (
+            <button
+              onClick={() => handleDelete(o._id)}
+              className="p-2 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+              title="Delete Oil Log"
+            >
+              <FaTrash className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+      ),
+    },
   ];
 
   return (
@@ -146,9 +206,9 @@ const OilChangesListPage = () => {
           <p className="text-xs text-slate-500 mt-1">Odometer interval tracking & upcoming change thresholds</p>
         </div>
 
-        {hasPermission('oil.create') && (
+        {(hasPermission('oil.create') || isAdmin) && (
           <button
-            onClick={handleOpenModal}
+            onClick={handleOpenAddModal}
             className="inline-flex items-center justify-center space-x-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl shadow-md shadow-indigo-100 transition-all cursor-pointer"
           >
             <FaPlus className="w-4 h-4" />
@@ -184,6 +244,26 @@ const OilChangesListPage = () => {
               <span>Changed: {formatKm(o.odometer)}</span>
               <span>Next Due: <strong>{formatKm(o.nextOilChangeOdometer)}</strong></span>
             </div>
+            <div className="flex justify-end space-x-2 pt-1 border-t border-slate-100">
+              {(hasPermission('oil.edit') || isAdmin) && (
+                <button
+                  onClick={() => handleOpenEditModal(o)}
+                  className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg flex items-center space-x-1 cursor-pointer"
+                >
+                  <FaEdit className="w-3.5 h-3.5" />
+                  <span>Edit</span>
+                </button>
+              )}
+              {(hasPermission('oil.delete') || isAdmin) && (
+                <button
+                  onClick={() => handleDelete(o._id)}
+                  className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-semibold rounded-lg flex items-center space-x-1 cursor-pointer"
+                >
+                  <FaTrash className="w-3.5 h-3.5" />
+                  <span>Delete</span>
+                </button>
+              )}
+            </div>
           </div>
         )}
       />
@@ -191,7 +271,7 @@ const OilChangesListPage = () => {
       <Modal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
-        title="Log Engine Oil Change"
+        title={editingChange ? 'Edit Engine Oil Change Log' : 'Log Engine Oil Change'}
       >
         <form onSubmit={handleSubmit} className="space-y-4">
           {formError && (
@@ -286,7 +366,7 @@ const OilChangesListPage = () => {
               disabled={formLoading}
               className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-semibold hover:bg-indigo-700 disabled:opacity-50"
             >
-              {formLoading ? 'Saving...' : 'Save Oil Change'}
+              {formLoading ? 'Saving...' : editingChange ? 'Update Oil Change' : 'Save Oil Change'}
             </button>
           </div>
         </form>
@@ -296,3 +376,4 @@ const OilChangesListPage = () => {
 };
 
 export default OilChangesListPage;
+

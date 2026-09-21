@@ -103,6 +103,49 @@ export const createTyreRecord = async (req, res, next) => {
   }
 };
 
+export const updateTyreRecord = async (req, res, next) => {
+  try {
+    const record = await Tyre.findById(req.params.id);
+    if (!record) {
+      return res.status(404).json({ success: false, message: 'Tyre record not found.' });
+    }
+
+    const previousValue = record.toObject();
+    const { installationDate, brand, model, position, quantity, cost, odometer, notes } = req.body;
+
+    if (installationDate) record.installationDate = installationDate;
+    if (brand) record.brand = brand;
+    if (model !== undefined) record.model = model;
+    if (position) record.position = position;
+    if (quantity !== undefined) record.quantity = Number(quantity);
+    if (cost !== undefined) record.cost = Number(cost);
+    if (odometer !== undefined) record.odometer = Number(odometer);
+    if (notes !== undefined) record.notes = notes;
+
+    await record.save();
+
+    await logAudit({
+      user: req.user._id,
+      action: 'TYRE_RECORD_UPDATED',
+      module: 'TYRES',
+      recordId: record._id,
+      previousValue,
+      newValue: record.toObject(),
+      notes: `Updated tyre record ID ${record._id}`,
+    });
+
+    const populated = await Tyre.findById(record._id).populate('vehicle').populate('user', 'name');
+
+    res.json({
+      success: true,
+      message: 'Tyre record updated successfully',
+      data: populated,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const deleteTyreRecord = async (req, res, next) => {
   try {
     const record = await Tyre.findById(req.params.id);
@@ -125,3 +168,4 @@ export const deleteTyreRecord = async (req, res, next) => {
     next(error);
   }
 };
+

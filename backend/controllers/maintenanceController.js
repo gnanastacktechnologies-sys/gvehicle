@@ -131,6 +131,60 @@ export const createMaintenanceRecord = async (req, res, next) => {
   }
 };
 
+export const updateMaintenanceRecord = async (req, res, next) => {
+  try {
+    const record = await Maintenance.findById(req.params.id);
+    if (!record) {
+      return res.status(404).json({ success: false, message: 'Maintenance record not found.' });
+    }
+
+    const previousValue = record.toObject();
+    const {
+      maintenanceType,
+      date,
+      odometer,
+      description,
+      cost,
+      serviceProvider,
+      nextDueDate,
+      nextDueOdometer,
+      notes,
+    } = req.body;
+
+    if (maintenanceType) record.maintenanceType = maintenanceType;
+    if (date) record.date = date;
+    if (odometer !== undefined) record.odometer = Number(odometer);
+    if (description) record.description = description.trim();
+    if (cost !== undefined) record.cost = Number(cost);
+    if (serviceProvider !== undefined) record.serviceProvider = serviceProvider;
+    if (nextDueDate !== undefined) record.nextDueDate = nextDueDate || null;
+    if (nextDueOdometer !== undefined) record.nextDueOdometer = nextDueOdometer !== null ? Number(nextDueOdometer) : null;
+    if (notes !== undefined) record.notes = notes;
+
+    await record.save();
+
+    await logAudit({
+      user: req.user._id,
+      action: 'MAINTENANCE_UPDATED',
+      module: 'MAINTENANCE',
+      recordId: record._id,
+      previousValue,
+      newValue: record.toObject(),
+      notes: `Updated maintenance record ID ${record._id}`,
+    });
+
+    const populated = await Maintenance.findById(record._id).populate('vehicle').populate('user', 'name');
+
+    res.json({
+      success: true,
+      message: 'Maintenance record updated successfully',
+      data: populated,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const deleteMaintenanceRecord = async (req, res, next) => {
   try {
     const record = await Maintenance.findById(req.params.id);
@@ -153,3 +207,4 @@ export const deleteMaintenanceRecord = async (req, res, next) => {
     next(error);
   }
 };
+

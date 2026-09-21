@@ -114,6 +114,61 @@ export const createOilChange = async (req, res, next) => {
   }
 };
 
+export const updateOilChange = async (req, res, next) => {
+  try {
+    const record = await OilChange.findById(req.params.id);
+    if (!record) {
+      return res.status(404).json({ success: false, message: 'Oil change record not found.' });
+    }
+
+    const previousValue = record.toObject();
+    const { date, odometer, oilType, oilBrand, quantity, cost, serviceProvider, notes } = req.body;
+
+    if (date) record.date = date;
+    if (odometer !== undefined) {
+      record.odometer = Number(odometer);
+      const vehicle = await Vehicle.findById(record.vehicle);
+      if (vehicle) {
+        const interval = vehicle.engineOilChangeIntervalKm || 5000;
+        record.nextOilChangeOdometer = record.odometer + interval;
+        if (record.odometer > (vehicle.lastOilChangeOdometer || 0)) {
+          vehicle.lastOilChangeOdometer = record.odometer;
+          vehicle.lastOilChangeDate = record.date;
+          await vehicle.save();
+        }
+      }
+    }
+    if (oilType) record.oilType = oilType;
+    if (oilBrand !== undefined) record.oilBrand = oilBrand;
+    if (quantity !== undefined) record.quantity = Number(quantity);
+    if (cost !== undefined) record.cost = Number(cost);
+    if (serviceProvider !== undefined) record.serviceProvider = serviceProvider;
+    if (notes !== undefined) record.notes = notes;
+
+    await record.save();
+
+    await logAudit({
+      user: req.user._id,
+      action: 'OIL_CHANGE_UPDATED',
+      module: 'OIL',
+      recordId: record._id,
+      previousValue,
+      newValue: record.toObject(),
+      notes: `Updated oil change record ID ${record._id}`,
+    });
+
+    const populated = await OilChange.findById(record._id).populate('vehicle').populate('user', 'name');
+
+    res.json({
+      success: true,
+      message: 'Oil change record updated successfully',
+      data: populated,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const deleteOilChange = async (req, res, next) => {
   try {
     const record = await OilChange.findById(req.params.id);
@@ -136,3 +191,4 @@ export const deleteOilChange = async (req, res, next) => {
     next(error);
   }
 };
+

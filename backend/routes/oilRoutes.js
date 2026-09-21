@@ -2,6 +2,7 @@ import express from 'express';
 import {
   getOilChanges,
   createOilChange,
+  updateOilChange,
   deleteOilChange,
 } from '../controllers/oilController.js';
 import { protect } from '../middleware/authMiddleware.js';
@@ -13,6 +14,8 @@ router.use(protect);
 
 router.get('/', hasPermission('oil.view'), getOilChanges);
 router.post('/', hasPermission('oil.create'), createOilChange);
+router.put('/:id', hasPermission('oil.edit'), updateOilChange);
 router.delete('/:id', hasPermission('oil.delete'), deleteOilChange);
 
 export default router;
+
