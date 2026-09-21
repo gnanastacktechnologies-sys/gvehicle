@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Modal from './Modal';
-import { FaCamera, FaUpload, FaCheck, FaTimes, FaRedo, FaExclamationCircle, FaEdit } from 'react-icons/fa';
+import { FaCamera, FaUpload, FaCheck, FaTimes, FaRedo, FaExclamationCircle, FaEdit, FaBolt } from 'react-icons/fa';
 import { createWorker } from 'tesseract.js';
 
 const OdometerScannerModal = ({ isOpen, onClose, onConfirm, initialValue = '' }) => {
@@ -11,14 +11,52 @@ const OdometerScannerModal = ({ isOpen, onClose, onConfirm, initialValue = '' })
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState('');
   const [cameraActive, setCameraActive] = useState(false);
+  const [torchOn, setTorchOn] = useState(false);
+  const [torchAvailable, setTorchAvailable] = useState(false);
 
   const videoRef = useRef(null);
   const fileInputRef = useRef(null);
+
+  // Detect Flashlight / Torch capability on active video track
+  useEffect(() => {
+    if (stream) {
+      const track = stream.getVideoTracks()?.[0];
+      if (track && typeof track.getCapabilities === 'function') {
+        const caps = track.getCapabilities();
+        if (caps.torch) {
+          setTorchAvailable(true);
+        } else {
+          setTorchAvailable(false);
+        }
+      }
+    } else {
+      setTorchAvailable(false);
+      setTorchOn(false);
+    }
+  }, [stream]);
+
+  // Toggle physical LED camera flashlight on/off
+  const toggleTorch = async () => {
+    if (!stream) return;
+    const track = stream.getVideoTracks()?.[0];
+    if (track && torchAvailable) {
+      try {
+        const nextState = !torchOn;
+        await track.applyConstraints({
+          advanced: [{ torch: nextState }],
+        });
+        setTorchOn(nextState);
+      } catch (err) {
+        console.warn('Torch activation error:', err);
+      }
+    }
+  };
 
   // Start Camera Stream
   const startCamera = async () => {
     setError('');
     setCameraActive(true);
+    setTorchOn(false);
     try {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         setCameraActive(false);
@@ -209,11 +247,28 @@ const getWorker = async () => {
               />
 
               {cameraActive && (
-                <div className="absolute inset-x-8 top-1/3 bottom-1/3 border-2 border-dashed border-amber-400/80 rounded-xl flex items-center justify-center bg-amber-400/10 backdrop-blur-[1px] pointer-events-none">
-                  <span className="text-[11px] font-bold text-white bg-slate-900/80 px-2 py-1 rounded-md shadow-xs">
-                    Align Odometer Numbers Inside Box
-                  </span>
-                </div>
+                <>
+                  <div className="absolute inset-x-8 top-1/3 bottom-1/3 border-2 border-dashed border-amber-400/80 rounded-xl flex items-center justify-center bg-amber-400/10 backdrop-blur-[1px] pointer-events-none">
+                    <span className="text-[11px] font-bold text-white bg-slate-900/80 px-2 py-1 rounded-md shadow-xs">
+                      Align Odometer Numbers Inside Box
+                    </span>
+                  </div>
+
+                  {torchAvailable && (
+                    <button
+                      type="button"
+                      onClick={toggleTorch}
+                      className={`absolute top-3 right-3 px-3 py-1.5 rounded-full text-xs font-bold flex items-center space-x-1.5 transition-all shadow-md cursor-pointer ${
+                        torchOn
+                          ? 'bg-amber-400 text-slate-900 ring-2 ring-amber-300'
+                          : 'bg-slate-800/80 text-white hover:bg-slate-700 backdrop-blur-xs'
+                      }`}
+                    >
+                      <FaBolt className={`w-3.5 h-3.5 ${torchOn ? 'text-slate-900 animate-pulse' : 'text-amber-400'}`} />
+                      <span>{torchOn ? 'Flashlight ON' : 'Flashlight OFF'}</span>
+                    </button>
+                  )}
+                </>
               )}
 
               {!cameraActive && (
