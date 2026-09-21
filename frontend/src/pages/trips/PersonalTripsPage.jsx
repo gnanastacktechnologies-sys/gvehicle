@@ -9,6 +9,8 @@ import Modal from '../../components/common/Modal';
 import { formatKm, formatDate, formatDateTime } from '../../utils/formatters';
 import { useAuth } from '../../context/AuthContext';
 import { FaUser, FaRoute, FaPlayCircle, FaStopCircle, FaExclamationCircle, FaTachometerAlt, FaTrash } from 'react-icons/fa';
+import OdometerInputWithScan from '../../components/common/OdometerInputWithScan';
+
 
 const PersonalTripsPage = () => {
   const [trips, setTrips] = useState([]);
@@ -361,16 +363,16 @@ const PersonalTripsPage = () => {
           )}
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">Ending Odometer Reading (KM) *</label>
-            <input
-              type="number"
+            <OdometerInputWithScan
+              label="Ending Odometer Reading (KM) *"
               required
               min={activeTripToStop?.startOdometer || 0}
               value={endOdometer}
               onChange={(e) => setEndOdometer(e.target.value)}
-              className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-800"
+              placeholder="e.g. 154850"
             />
           </div>
+
 
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1">Notes</label>

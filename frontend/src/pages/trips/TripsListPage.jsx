@@ -8,6 +8,8 @@ import Badge from '../../components/common/Badge';
 import { formatKm, formatDate, formatDateTime } from '../../utils/formatters';
 import { useAuth } from '../../context/AuthContext';
 import { FaPlayCircle, FaStopCircle, FaExclamationCircle, FaPlus, FaUser, FaBriefcase, FaEdit, FaTrash } from 'react-icons/fa';
+import OdometerInputWithScan from '../../components/common/OdometerInputWithScan';
+
 
 const TripsListPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -641,14 +643,13 @@ const TripsListPage = () => {
           )}
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">Ending Odometer Reading (KM) *</label>
-            <input
-              type="number"
+            <OdometerInputWithScan
+              label="Ending Odometer Reading (KM) *"
               required
               min={activeTripToStop?.startOdometer || 0}
               value={endOdometer}
               onChange={(e) => setEndOdometer(e.target.value)}
-              className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-800"
+              placeholder="e.g. 154850"
             />
           </div>
 
@@ -745,30 +746,28 @@ const TripsListPage = () => {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Start Odometer (KM)</label>
-              <input
-                type="number"
+              <OdometerInputWithScan
+                label="Start Odometer (KM) *"
                 required
-                min="0"
+                min={0}
                 value={editFormData.startOdometer}
                 onChange={(e) => setEditFormData({ ...editFormData, startOdometer: e.target.value })}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm"
+                placeholder="e.g. 154000"
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">End Odometer (KM)</label>
-              <input
-                type="number"
+              <OdometerInputWithScan
+                label="End Odometer (KM)"
                 min={editFormData.startOdometer || 0}
                 value={editFormData.endOdometer}
                 onChange={(e) => setEditFormData({ ...editFormData, endOdometer: e.target.value })}
                 placeholder="Leave blank if active"
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm"
               />
             </div>
           </div>
+
 
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1">Trip Notes</label>

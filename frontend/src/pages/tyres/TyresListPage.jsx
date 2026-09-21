@@ -7,6 +7,8 @@ import Badge from '../../components/common/Badge';
 import { formatCurrency, formatDate, formatKm } from '../../utils/formatters';
 import { useAuth } from '../../context/AuthContext';
 import { FaPlus, FaCircleNotch, FaExclamationCircle, FaEdit, FaTrash } from 'react-icons/fa';
+import OdometerInputWithScan from '../../components/common/OdometerInputWithScan';
+
 
 const TyresListPage = () => {
   const [tyres, setTyres] = useState([]);
@@ -339,17 +341,16 @@ const TyresListPage = () => {
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Current Odometer Reading (KM) *</label>
-              <input
-                type="number"
+              <OdometerInputWithScan
+                label="Current Odometer Reading (KM) *"
                 required
-                min="0"
+                min={0}
                 value={formData.odometer}
                 onChange={(e) => setFormData({ ...formData, odometer: e.target.value })}
-                placeholder="50000"
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-800"
+                placeholder="e.g. 154230"
               />
             </div>
+
           </div>
 
           <div className="grid grid-cols-2 gap-3">
