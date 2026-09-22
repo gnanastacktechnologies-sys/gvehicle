@@ -152,48 +152,35 @@ const getWorker = async () => {
     const candidatesSet = new Set();
     const initNum = Number(initialValue) || 0;
 
-    // 1. Join spaced digit sequences and strip dots/dashes (e.g. "1542 3" -> "15423", "1542.3" -> "15423")
-    const cleanedRaw = rawText.replace(/[\.\,\-\_]+/g, ' ');
-    const joinedSpacedText = cleanedRaw
-      .replace(/(\d)\s+(\d)/g, '$1$2')
-      .replace(/(\d)\s+(\d)/g, '$1$2')
-      .replace(/(\d)\s+(\d)/g, '$1$2');
+    // 1. Join adjacent spaced digit sequences (e.g. "1542 3" -> "15423", "1 5 4 2 3" -> "15423", "1542.3" -> "15423")
+    const joinedSpacedText = rawText
+      .replace(/[\,\-\_]+/g, ' ')
+      .replace(/\b(\d{1,5})[\.\s](\d{1,2})\b/g, '$1$2')
+      .replace(/\b(\d)\s+(\d)\s+(\d)\s+(\d)(?:\s+(\d))?(?:\s+(\d))?\b/g, (match) => match.replace(/\s+/g, ''));
 
-    // 2. Extract all numeric tokens from raw text, cleaned text, and joined text
-    const rawTokens = (rawText + ' ' + cleanedRaw + ' ' + joinedSpacedText).split(/[^0-9]+/);
+    // 2. Extract numeric tokens from raw text & joined text
+    const rawTokens = (rawText + ' ' + joinedSpacedText).split(/[^0-9]+/);
 
     const gearShiftMarks = new Set(['1', '2', '3', '4', '5', '6']);
     const speedometerSteps = new Set(['0', '20', '40', '60', '80', '100', '120', '140', '160', '180', '200', '220']);
 
     rawTokens.forEach((token) => {
       const cleaned = token.trim();
-      if (cleaned.length >= 1) {
+      // Strict rule: Ignore any token > 6 digits (eliminates dashboard multi-number concatenated noise)
+      if (cleaned.length >= 4 && cleaned.length <= 6) {
         candidatesSet.add(cleaned);
-        if (cleaned.length === 6) {
-          candidatesSet.add(cleaned.slice(0, 5));
-        }
+      } else if (cleaned.length === 6) {
+        candidatesSet.add(cleaned.slice(0, 5));
+      } else if (cleaned.length >= 1 && cleaned.length <= 3) {
+        candidatesSet.add(cleaned);
       }
     });
 
-    // If candidate has 4 digits (e.g. "1542") and a 1-digit token ("3") exists separately due to spacing/glare, combine them ("15423")
-    const initialTokens = Array.from(candidatesSet);
-    for (let i = 0; i < initialTokens.length; i++) {
-      const t1 = initialTokens[i];
-      if (t1.length === 4) {
-        for (let j = 0; j < initialTokens.length; j++) {
-          const t2 = initialTokens[j];
-          if (t2.length === 1) {
-            candidatesSet.add(t1 + t2);
-          }
-        }
-      }
-    }
-
-    const uniqueTokens = Array.from(candidatesSet);
+    const uniqueTokens = Array.from(candidatesSet).filter((t) => t.length <= 6);
 
     // Sort candidates:
-    // 1st Priority: Numbers close to initial vehicle odometer reading (initNum <= val <= initNum + 50000)
-    // 2nd Priority: Valid 4 to 7 digit odometer numbers
+    // 1st Priority: Numbers matching or close to initial vehicle odometer reading (initNum <= val <= initNum + 50000)
+    // 2nd Priority: Valid 4 to 6 digit odometer numbers
     // 3rd Priority: Non-noise numbers
     // 4th Priority: Length
     uniqueTokens.sort((a, b) => {
@@ -210,8 +197,8 @@ const getWorker = async () => {
         return Math.abs(numA - initNum) - Math.abs(numB - initNum);
       }
 
-      const aIsOdometer = a.length >= 4 && a.length <= 7 && !speedometerSteps.has(a);
-      const bIsOdometer = b.length >= 4 && b.length <= 7 && !speedometerSteps.has(b);
+      const aIsOdometer = a.length >= 4 && a.length <= 6 && !speedometerSteps.has(a);
+      const bIsOdometer = b.length >= 4 && b.length <= 6 && !speedometerSteps.has(b);
 
       const aIsNoise = gearShiftMarks.has(a) || speedometerSteps.has(a);
       const bIsNoise = gearShiftMarks.has(b) || speedometerSteps.has(b);
@@ -225,12 +212,15 @@ const getWorker = async () => {
       return b.length - a.length;
     });
 
-    const hasValidCandidates = uniqueTokens.some((t) => t.length >= 4 || (initNum > 0 && Number(t) >= Math.max(0, initNum - 100)));
-    if (hasValidCandidates) {
-      return uniqueTokens.filter((t) => !gearShiftMarks.has(t) && !speedometerSteps.has(t));
+    const validOdoCandidates = uniqueTokens.filter(
+      (t) => t.length >= 4 && t.length <= 6 && !gearShiftMarks.has(t) && !speedometerSteps.has(t)
+    );
+
+    if (validOdoCandidates.length > 0) {
+      return validOdoCandidates;
     }
 
-    return uniqueTokens;
+    return uniqueTokens.filter((t) => t.length <= 6 && !gearShiftMarks.has(t) && !speedometerSteps.has(t));
   };
 
   // Process image with OCR
@@ -247,7 +237,7 @@ const getWorker = async () => {
       setCandidates(foundCandidates);
 
       if (foundCandidates.length > 0) {
-        // Pick top candidate (ideal 4-7 digit odometer number)
+        // Pick top candidate (ideal 4-6 digit odometer number)
         const primaryMatch = foundCandidates[0];
         setExtractedValue(primaryMatch);
         setEditedValue(primaryMatch);
@@ -266,18 +256,18 @@ const getWorker = async () => {
     }
   };
 
-  // Capture Photo from Video Stream (Cropped to wide ROI Box with 1.5x scaling and contrast enhancement)
+  // Capture Photo from Video Stream (Cropped to focused ROI Box with 1.5x scaling and contrast enhancement)
   const handleCapture = () => {
     if (!videoRef.current) return;
     const video = videoRef.current;
     const vWidth = video.videoWidth || 640;
     const vHeight = video.videoHeight || 480;
 
-    // Use full 98% width crop box so 5th & 6th rightmost digits are never clipped
-    const cropX = Math.floor(vWidth * 0.01);
-    const cropY = Math.floor(vHeight * 0.20);
-    const cropW = Math.floor(vWidth * 0.98);
-    const cropH = Math.floor(vHeight * 0.60);
+    // Focused 90% width crop box
+    const cropX = Math.floor(vWidth * 0.05);
+    const cropY = Math.floor(vHeight * 0.22);
+    const cropW = Math.floor(vWidth * 0.90);
+    const cropH = Math.floor(vHeight * 0.56);
 
     const cropCanvas = document.createElement('canvas');
     // Upscale by 1.5x for higher OCR resolution
@@ -288,7 +278,7 @@ const getWorker = async () => {
 
     // Contrast & brightness enhancement for OCR accuracy
     if ('filter' in cropCtx) {
-      cropCtx.filter = 'contrast(140%) brightness(105%)';
+      cropCtx.filter = 'contrast(130%) brightness(105%)';
     }
     cropCtx.drawImage(video, cropX, cropY, cropW, cropH, 0, 0, cropCanvas.width, cropCanvas.height);
 
