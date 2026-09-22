@@ -376,27 +376,15 @@ const FuelListPage = () => {
             </select>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Date *</label>
-              <input
-                type="date"
-                required
-                value={formData.date}
-                onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Fuel Station</label>
-              <input
-                type="text"
-                value={formData.fuelStation}
-                onChange={(e) => setFormData({ ...formData, fuelStation: e.target.value })}
-                placeholder="e.g. Indian Oil, HP Pump"
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm"
-              />
-            </div>
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">Date *</label>
+            <input
+              type="date"
+              required
+              value={formData.date}
+              onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm"
+            />
           </div>
 
           <div>
