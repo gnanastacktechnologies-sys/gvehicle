@@ -14,6 +14,8 @@ const OdometerScannerModal = ({ isOpen, onClose, onConfirm, initialValue = '' })
   const [torchOn, setTorchOn] = useState(false);
   const [torchAvailable, setTorchAvailable] = useState(false);
 
+  const [candidates, setCandidates] = useState([]);
+
   const videoRef = useRef(null);
   const fileInputRef = useRef(null);
 
@@ -110,6 +112,7 @@ const OdometerScannerModal = ({ isOpen, onClose, onConfirm, initialValue = '' })
       setCapturedImage(null);
       setExtractedValue('');
       setEditedValue('');
+      setCandidates([]);
       setError('');
       startCamera();
     } else {
@@ -142,24 +145,58 @@ const getWorker = async () => {
   return cachedWorkerPromise;
 };
 
+  // Parse raw OCR text into discrete numeric tokens & filter out speedometer noise
+  const parseNumericCandidates = (rawText) => {
+    if (!rawText) return [];
+
+    // Split raw text by non-digit characters (spaces, newlines, punctuation, letters)
+    const rawTokens = rawText.split(/[^0-9]+/);
+
+    // Clean and keep non-empty numeric strings
+    const numericTokens = rawTokens
+      .map((t) => t.trim())
+      .filter((t) => t.length > 0);
+
+    // Get unique numeric tokens
+    const uniqueTokens = Array.from(new Set(numericTokens));
+
+    // Sort candidates by likelihood of being an odometer reading:
+    // Priority 1: 4 to 7 digit numbers (standard odometer readings like 128540, 45820)
+    // Priority 2: 3 digit numbers
+    // Priority 3: 1-2 digit numbers (speedometer step marks 20, 40, 60, etc.)
+    uniqueTokens.sort((a, b) => {
+      const aIdeal = a.length >= 4 && a.length <= 7;
+      const bIdeal = b.length >= 4 && b.length <= 7;
+      if (aIdeal && !bIdeal) return -1;
+      if (!aIdeal && bIdeal) return 1;
+      return b.length - a.length;
+    });
+
+    return uniqueTokens;
+  };
+
   // Process image with OCR
   const processImage = async (imageSrc) => {
     setProcessing(true);
     setError('');
+    setCandidates([]);
     try {
       const worker = await getWorker();
       const { data } = await worker.recognize(imageSrc);
 
-      // Extract all numeric sequences
-      const cleanDigits = data.text.replace(/[^0-9]/g, '');
-      
-      if (cleanDigits) {
-        setExtractedValue(cleanDigits);
-        setEditedValue(cleanDigits);
+      // Extract discrete numeric tokens instead of raw concatenated text
+      const foundCandidates = parseNumericCandidates(data.text);
+      setCandidates(foundCandidates);
+
+      if (foundCandidates.length > 0) {
+        // Pick top candidate (ideal 4-7 digit odometer number)
+        const primaryMatch = foundCandidates[0];
+        setExtractedValue(primaryMatch);
+        setEditedValue(primaryMatch);
       } else {
         setExtractedValue('');
         setEditedValue(initialValue ? String(initialValue) : '');
-        setError('Could not clearly detect numbers in the image. Please verify or type manually.');
+        setError('Could not clearly detect numbers inside alignment box. Please verify or select/type manually.');
       }
     } catch (err) {
       console.error('OCR Processing error:', err);
@@ -171,19 +208,37 @@ const getWorker = async () => {
     }
   };
 
-  // Capture Photo from Video Stream
+  // Capture Photo from Video Stream (Cropped to ROI Box)
   const handleCapture = () => {
     if (!videoRef.current) return;
-    const canvas = document.createElement('canvas');
-    canvas.width = videoRef.current.videoWidth || 640;
-    canvas.height = videoRef.current.videoHeight || 480;
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
-    const dataUrl = canvas.toDataURL('image/jpeg');
+    const video = videoRef.current;
+    const vWidth = video.videoWidth || 640;
+    const vHeight = video.videoHeight || 480;
+
+    // Full frame canvas
+    const fullCanvas = document.createElement('canvas');
+    fullCanvas.width = vWidth;
+    fullCanvas.height = vHeight;
+    const ctx = fullCanvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, vWidth, vHeight);
+
+    // Calculate crop box matching alignment box (inset-x-8 top-1/3 bottom-1/3)
+    const cropX = Math.floor(vWidth * 0.08); // 8% horizontal inset padding
+    const cropY = Math.floor(vHeight * 0.28); // 28% top inset padding
+    const cropW = Math.floor(vWidth * 0.84); // 84% box width
+    const cropH = Math.floor(vHeight * 0.44); // 44% box height
+
+    const cropCanvas = document.createElement('canvas');
+    cropCanvas.width = cropW;
+    cropCanvas.height = cropH;
+    const cropCtx = cropCanvas.getContext('2d');
+    cropCtx.drawImage(fullCanvas, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+
+    const croppedDataUrl = cropCanvas.toDataURL('image/jpeg');
 
     stopCamera();
-    setCapturedImage(dataUrl);
-    processImage(dataUrl);
+    setCapturedImage(croppedDataUrl);
+    processImage(croppedDataUrl);
   };
 
   // File Upload Fallback
@@ -353,8 +408,38 @@ const getWorker = async () => {
                 <FaEdit className="absolute right-3.5 top-3.5 text-slate-400 w-4 h-4 pointer-events-none" />
               </div>
 
+              {/* Detected Candidate Number Chips */}
+              {candidates.length > 0 && (
+                <div className="space-y-1.5 pt-1">
+                  <span className="text-[11px] font-bold text-slate-700 block">
+                    Detected Numbers ({candidates.length}) - Tap to select correct reading:
+                  </span>
+                  <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto p-1.5 bg-white border border-indigo-150 rounded-xl shadow-xs">
+                    {candidates.map((cand, idx) => {
+                      const isSelected = editedValue === cand;
+                      const isRecommended = cand.length >= 4 && cand.length <= 7;
+                      return (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => setEditedValue(cand)}
+                          className={`px-2.5 py-1 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer flex items-center space-x-1 ${
+                            isSelected
+                              ? 'bg-indigo-600 text-white shadow-xs ring-2 ring-indigo-300'
+                              : 'bg-slate-50 border border-slate-200 text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-200'
+                          }`}
+                        >
+                          <span>{cand} KM</span>
+                          {isRecommended && <span className="text-[10px]" title="Recommended odometer length">⭐</span>}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               <p className="text-[11px] text-slate-500 leading-snug">
-                Check if the extracted number matches your meter display. You can type to correct any digit.
+                Check if the extracted number matches your meter display. You can tap any detected number above or type to correct any digit.
               </p>
 
               {editedValue.length >= 6 && (
