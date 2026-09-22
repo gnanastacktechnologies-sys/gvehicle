@@ -54,10 +54,10 @@ const Modal = ({ isOpen, onClose, title, children, maxWidth = 'max-w-lg', zIndex
         style={{ zIndex: zIndex + 10 }}
       >
         <div
-          className={`relative w-full max-w-[95vw] ${maxWidth} transform overflow-hidden rounded-2xl bg-white p-4 sm:p-6 text-left align-middle shadow-2xl transition-all border border-slate-100 my-auto`}
+          className={`relative w-full max-w-[95vw] ${maxWidth} max-h-[88vh] sm:max-h-[90vh] flex flex-col transform overflow-hidden rounded-2xl bg-white p-3.5 sm:p-6 text-left align-middle shadow-2xl transition-all border border-slate-100 my-auto`}
         >
           {/* Modal Header */}
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-3 sm:pb-4 sm:mb-4">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-2.5 mb-2.5 sm:pb-4 sm:mb-4 flex-shrink-0">
             <h3 className="text-base sm:text-lg font-semibold text-slate-800">{title}</h3>
             <button
               type="button"
@@ -71,7 +71,7 @@ const Modal = ({ isOpen, onClose, title, children, maxWidth = 'max-w-lg', zIndex
 
           {/* Modal Body */}
           <div
-            className="max-h-[75vh] sm:max-h-[80vh] overflow-y-auto overflow-x-hidden overscroll-contain touch-pan-y pr-0.5 space-y-2 w-full"
+            className="flex-1 overflow-y-auto overflow-x-hidden overscroll-contain touch-pan-y pr-0.5 space-y-2 w-full"
             style={{ WebkitOverflowScrolling: 'touch' }}
           >
             {children}
