@@ -34,6 +34,17 @@ const MainLayout = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(
+    () => localStorage.getItem('gvehicle_sidebar_collapsed') === 'true'
+  );
+
+  const toggleSidebar = () => {
+    setSidebarCollapsed((prev) => {
+      const next = !prev;
+      localStorage.setItem('gvehicle_sidebar_collapsed', String(next));
+      return next;
+    });
+  };
 
   const navigationItems = [
     { name: 'Dashboard', path: '/dashboard', icon: FaChartPie, perm: 'dashboard.view' },
@@ -58,22 +69,44 @@ const MainLayout = ({ children }) => {
     return false;
   };
 
+  const currentPageTitle = allowedNav.find((item) => isActivePath(item.path))?.name || 'Dashboard';
+
   return (
     <div className="min-h-screen bg-surface-bg flex flex-col md:flex-row">
       {/* Desktop Sidebar Navigation */}
-      <aside className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 h-screen bg-white border-r border-slate-200 z-30 overscroll-contain" style={{ overscrollBehavior: 'contain' }}>
-        <div className="flex items-center space-x-3 px-5 h-16 border-b border-slate-100 flex-shrink-0">
-          <img src="/logo.png" alt="Gvehicle" className="w-10 h-10 object-contain rounded-lg" />
-          <div>
-            <div className="flex items-center space-x-1.5">
-              <h1 className="text-base font-extrabold text-slate-800 leading-tight">Gvehicle</h1>
-            </div>
-            <span className="text-[10px] font-semibold tracking-wider text-indigo-600 uppercase">Fleet Manager</span>
+      <aside
+        className={`hidden md:flex md:flex-col md:fixed md:inset-y-0 h-screen bg-white border-r border-slate-200 z-30 transition-all duration-300 ease-in-out overscroll-contain ${
+          sidebarCollapsed ? 'md:w-20' : 'md:w-64'
+        }`}
+        style={{ overscrollBehavior: 'contain' }}
+      >
+        <div
+          className={`flex items-center ${
+            sidebarCollapsed ? 'justify-center px-2' : 'justify-between px-5'
+          } h-16 border-b border-slate-100 flex-shrink-0`}
+        >
+          <div className="flex items-center space-x-3 overflow-hidden">
+            <img src="/logo.png" alt="Gvehicle" className="w-9 h-9 object-contain rounded-lg flex-shrink-0" />
+            {!sidebarCollapsed && (
+              <div className="truncate">
+                <h1 className="text-base font-extrabold text-slate-800 leading-tight truncate">Gvehicle</h1>
+                <span className="text-[10px] font-semibold tracking-wider text-indigo-600 uppercase block truncate">
+                  Fleet Manager
+                </span>
+              </div>
+            )}
           </div>
+          <button
+            onClick={toggleSidebar}
+            title={sidebarCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
+            className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer hidden md:block"
+          >
+            <FaBars className="w-4 h-4" />
+          </button>
         </div>
 
         {/* Menu Items with Isolated Scrolling */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-1 overscroll-contain" style={{ overscrollBehavior: 'contain' }}>
+        <div className="flex-1 overflow-y-auto p-3 space-y-1.5 overscroll-contain" style={{ overscrollBehavior: 'contain' }}>
           {allowedNav.map((item) => {
             const Icon = item.icon;
             const active = isActivePath(item.path);
@@ -81,41 +114,95 @@ const MainLayout = ({ children }) => {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                title={sidebarCollapsed ? item.name : undefined}
+                className={`flex items-center ${
+                  sidebarCollapsed ? 'justify-center px-2.5 py-3' : 'space-x-3 px-3.5 py-2.5'
+                } rounded-xl text-sm font-medium transition-all ${
                   active
                     ? 'bg-indigo-50 text-indigo-600 font-semibold shadow-2xs'
                     : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                 }`}
               >
-                <Icon className={`w-4 h-4 ${active ? 'text-indigo-600' : 'text-slate-400'}`} />
-                <span>{item.name}</span>
+                <Icon className={`w-4 h-4 flex-shrink-0 ${active ? 'text-indigo-600' : 'text-slate-400'}`} />
+                {!sidebarCollapsed && <span className="truncate">{item.name}</span>}
               </Link>
             );
           })}
         </div>
 
         {/* Bottom User Info & Logout */}
-        <div className="p-4 border-t border-slate-100 bg-slate-50/50 flex-shrink-0">
-          <div className="flex items-center justify-between">
-            <Link to="/profile" title="View Profile Settings" className="flex items-center space-x-3 overflow-hidden group cursor-pointer">
-              <div className="p-2 bg-indigo-100 group-hover:bg-indigo-600 group-hover:text-white transition-all rounded-xl text-indigo-600 font-bold text-xs uppercase">
+        <div className="p-3 border-t border-slate-100 bg-slate-50/50 flex-shrink-0">
+          <div className={`flex items-center ${sidebarCollapsed ? 'justify-center' : 'justify-between'}`}>
+            <Link
+              to="/profile"
+              title={sidebarCollapsed ? `${user?.name} (${user?.role})` : 'View Profile Settings'}
+              className="flex items-center space-x-3 overflow-hidden group cursor-pointer"
+            >
+              <div className="p-2 bg-indigo-100 group-hover:bg-indigo-600 group-hover:text-white transition-all rounded-xl text-indigo-600 font-bold text-xs uppercase flex-shrink-0">
                 {getInitials(user?.name)}
               </div>
-              <div className="truncate">
-                <p className="text-xs font-semibold text-slate-800 group-hover:text-indigo-600 transition-colors truncate">{user?.name}</p>
-                <p className="text-[10px] font-medium text-slate-400 capitalize">{user?.role?.toLowerCase()}</p>
-              </div>
+              {!sidebarCollapsed && (
+                <div className="truncate">
+                  <p className="text-xs font-semibold text-slate-800 group-hover:text-indigo-600 transition-colors truncate">
+                    {user?.name}
+                  </p>
+                  <p className="text-[10px] font-medium text-slate-400 capitalize">{user?.role?.toLowerCase()}</p>
+                </div>
+              )}
             </Link>
-            <button
-              onClick={logout}
-              title="Logout"
-              className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all cursor-pointer"
-            >
-              <FaSignOutAlt className="w-4 h-4" />
-            </button>
+            {!sidebarCollapsed && (
+              <button
+                onClick={logout}
+                title="Logout"
+                className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all cursor-pointer"
+              >
+                <FaSignOutAlt className="w-4 h-4" />
+              </button>
+            )}
           </div>
         </div>
       </aside>
+
+      {/* Laptop / Desktop Top Header Bar with Menu Button */}
+      <header className="hidden md:flex sticky top-0 z-20 bg-white/90 backdrop-blur-md border-b border-slate-200 px-6 h-16 items-center justify-between shadow-2xs">
+        <div className="flex items-center space-x-4">
+          <button
+            onClick={toggleSidebar}
+            className="p-2.5 text-slate-700 bg-slate-100 hover:bg-slate-200 hover:text-indigo-600 rounded-xl transition-all cursor-pointer focus:outline-hidden"
+            title={sidebarCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
+            aria-label="Toggle Sidebar"
+          >
+            <FaBars className="w-5 h-5" />
+          </button>
+          <div className="flex items-center space-x-2">
+            <h2 className="text-base font-extrabold text-slate-800 tracking-tight">{currentPageTitle}</h2>
+          </div>
+        </div>
+
+        <div className="flex items-center space-x-3">
+          <Link
+            to="/profile"
+            className="flex items-center space-x-2.5 p-1.5 px-3 hover:bg-slate-100 rounded-xl transition-all cursor-pointer group"
+          >
+            <div className="w-8 h-8 rounded-full bg-indigo-600 text-white font-extrabold text-xs uppercase flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform">
+              {getInitials(user?.name)}
+            </div>
+            <div className="text-left">
+              <p className="text-xs font-bold text-slate-800 leading-tight group-hover:text-indigo-600 transition-colors">
+                {user?.name}
+              </p>
+              <p className="text-[10px] text-slate-400 capitalize leading-tight">{user?.role?.toLowerCase()}</p>
+            </div>
+          </Link>
+          <button
+            onClick={logout}
+            title="Logout"
+            className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all cursor-pointer"
+          >
+            <FaSignOutAlt className="w-4 h-4" />
+          </button>
+        </div>
+      </header>
 
       {/* Mobile Top Header - Left Aligned Menu Bar with 2-Letter Circle Profile Avatar */}
       <header className="md:hidden sticky top-0 z-40 bg-white border-b border-slate-200 px-3.5 h-16 flex items-center justify-between shadow-2xs">
@@ -226,7 +313,11 @@ const MainLayout = ({ children }) => {
       )}
 
       {/* Main Content Body */}
-      <main className="flex-1 md:pl-64 min-h-screen flex flex-col">
+      <main
+        className={`flex-1 min-h-screen flex flex-col transition-all duration-300 ease-in-out ${
+          sidebarCollapsed ? 'md:pl-20' : 'md:pl-64'
+        }`}
+      >
         <div className="p-4 sm:p-6 lg:p-8 flex-1 max-w-7xl w-full mx-auto">{children}</div>
         <footer className="py-4 text-center text-xs text-slate-400 font-medium border-t border-slate-200/60 mt-auto bg-white/50">
           Copyright © 2026 Gnanastack Technologies. All rights reserved.
