@@ -107,7 +107,33 @@ const SettingsPage = () => {
     fetchSettings();
   }, []);
 
-  const handleAddPreset = (categoryKey, e) => {
+  const saveSettingsToBackend = async (updatedData) => {
+    try {
+      setSaving(true);
+      setError('');
+      const res = await API.put('/settings', updatedData);
+      if (res.data.data) {
+        const d = res.data.data;
+        setSettingsData({
+          tripPurposes: Array.isArray(d.tripPurposes) ? d.tripPurposes : [],
+          fuelStations: Array.isArray(d.fuelStations) ? d.fuelStations : [],
+          oilBrands: Array.isArray(d.oilBrands) ? d.oilBrands : [],
+          tyreBrands: Array.isArray(d.tyreBrands) ? d.tyreBrands : [],
+          serviceProviders: Array.isArray(d.serviceProviders) ? d.serviceProviders : [],
+        });
+      }
+      return true;
+    } catch (err) {
+      console.error('Save settings error:', err);
+      setError(err.response?.data?.message || 'Failed to save settings.');
+      toast.error('Failed to save settings to database.');
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleAddPreset = async (categoryKey, e) => {
     e.preventDefault();
     const clean = (inputValues[categoryKey] || '').trim();
     if (!clean) return;
@@ -118,47 +144,52 @@ const SettingsPage = () => {
       return;
     }
 
-    setSettingsData({
+    const updated = {
       ...settingsData,
       [categoryKey]: [...currentList, clean],
-    });
+    };
 
+    setSettingsData(updated);
     setInputValues({ ...inputValues, [categoryKey]: '' });
-    toast.info(`Added "${clean}". Remember to click Save Settings to apply.`);
+    const success = await saveSettingsToBackend(updated);
+    if (success) {
+      toast.success(`Added "${clean}" and saved to database!`);
+    }
   };
 
-  const handleRemovePreset = (categoryKey, indexToRemove) => {
+  const handleRemovePreset = async (categoryKey, indexToRemove) => {
     const currentList = settingsData[categoryKey] || [];
     const removedName = currentList[indexToRemove];
-    setSettingsData({
+    const updated = {
       ...settingsData,
       [categoryKey]: currentList.filter((_, idx) => idx !== indexToRemove),
-    });
-    toast.info(`Removed "${removedName}". Click Save Settings to commit.`);
+    };
+
+    setSettingsData(updated);
+    const success = await saveSettingsToBackend(updated);
+    if (success) {
+      toast.success(`Removed "${removedName}" and saved!`);
+    }
   };
 
-  const handleRestoreCategoryDefaults = (categoryKey) => {
-    if (window.confirm(`Restore defaults for this section?`)) {
-      setSettingsData({
+  const handleRestoreCategoryDefaults = async (categoryKey) => {
+    if (window.confirm(`Restore default presets for this section?`)) {
+      const updated = {
         ...settingsData,
         [categoryKey]: DEFAULT_SETTINGS[categoryKey],
-      });
-      toast.info('Restored defaults. Click Save Settings to commit.');
+      };
+      setSettingsData(updated);
+      const success = await saveSettingsToBackend(updated);
+      if (success) {
+        toast.success('Restored default presets and saved!');
+      }
     }
   };
 
   const handleSaveSettings = async () => {
-    try {
-      setSaving(true);
-      setError('');
-      await API.put('/settings', settingsData);
-      toast.success('All System Presets & Settings updated successfully!');
-    } catch (err) {
-      console.error('Save settings error:', err);
-      setError(err.response?.data?.message || 'Failed to save settings.');
-      toast.error('Failed to save settings.');
-    } finally {
-      setSaving(false);
+    const success = await saveSettingsToBackend(settingsData);
+    if (success) {
+      toast.success('All System Presets & Settings saved successfully!');
     }
   };
 
