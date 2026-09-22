@@ -99,6 +99,15 @@ const TripsListPage = () => {
     }
   };
 
+  const fetchActiveVehicles = async () => {
+    try {
+      const res = await API.get('/vehicles?status=ACTIVE&limit=100');
+      setVehicles(res.data.data);
+    } catch (err) {
+      console.error('Failed to fetch vehicles for dropdown:', err);
+    }
+  };
+
   const fetchPresetPurposes = async () => {
     try {
       const res = await API.get('/settings');
