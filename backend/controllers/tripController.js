@@ -6,8 +6,11 @@ export const startRide = async (req, res, next) => {
   try {
     const { vehicleId, purpose, tripType, startOdometer, notes } = req.body;
 
-    if (!vehicleId || !purpose) {
-      return res.status(400).json({ success: false, message: 'Vehicle and purpose are required.' });
+    if (!vehicleId) {
+      return res.status(400).json({ success: false, message: 'Please select a vehicle.' });
+    }
+    if (!purpose || !purpose.trim()) {
+      return res.status(400).json({ success: false, message: 'Trip purpose is required. Please select or specify a purpose.' });
     }
 
     const vehicle = await Vehicle.findById(vehicleId);
@@ -24,13 +27,16 @@ export const startRide = async (req, res, next) => {
     if (existingActiveTrip) {
       return res.status(400).json({
         success: false,
-        message: `This vehicle already has an active ride started by ${existingActiveTrip.user?.name || 'another user'}.`,
+        message: `This vehicle already has an active ride started by ${existingActiveTrip.user?.name || 'another user'}. Please stop that ride before starting a new one.`,
         activeTrip: existingActiveTrip,
       });
     }
 
     // Determine start odometer (default to vehicle current odometer)
-    const initialStartOdo = startOdometer !== undefined ? Number(startOdometer) : vehicle.currentOdometer;
+    const parsedStartOdo = Number(startOdometer);
+    const initialStartOdo = startOdometer !== undefined && startOdometer !== null && !isNaN(parsedStartOdo)
+      ? parsedStartOdo
+      : vehicle.currentOdometer;
 
     // Rule 3: Prevent starting with start odometer less than vehicle current odometer
     if (initialStartOdo < vehicle.currentOdometer) {

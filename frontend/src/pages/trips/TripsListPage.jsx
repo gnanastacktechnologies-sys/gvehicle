@@ -146,6 +146,24 @@ const TripsListPage = () => {
     }
   }, [searchParams, vehicles]);
 
+  // Ensure startVehicleId and selectedVehicle stay properly synced whenever start modal is open
+  useEffect(() => {
+    if (startModalOpen && vehicles.length > 0) {
+      const foundV = vehicles.find((v) => String(v._id) === String(startVehicleId));
+      if (foundV) {
+        setSelectedVehicle(foundV);
+        if (startOdometer === 0 || startOdometer === '0' || startOdometer === '') {
+          setStartOdometer(foundV.currentOdometer);
+        }
+      } else if (!startVehicleId) {
+        const firstV = vehicles[0];
+        setStartVehicleId(firstV._id);
+        setSelectedVehicle(firstV);
+        setStartOdometer(firstV.currentOdometer);
+      }
+    }
+  }, [startModalOpen, vehicles, startVehicleId]);
+
   const handleOpenStart = (vId = '', defaultCat = '') => {
     setStartError('');
     setPurpose('');
@@ -157,10 +175,13 @@ const TripsListPage = () => {
     const targetVId = vId || (vehicles[0]?._id || '');
     setStartVehicleId(targetVId);
 
-    const foundV = vehicles.find((v) => v._id === targetVId);
-    if (foundV) {
-      setSelectedVehicle(foundV);
-      setStartOdometer(foundV.currentOdometer);
+    if (vehicles.length > 0) {
+      const foundV = vehicles.find((v) => String(v._id) === String(targetVId)) || vehicles[0];
+      if (foundV) {
+        setStartVehicleId(foundV._id);
+        setSelectedVehicle(foundV);
+        setStartOdometer(foundV.currentOdometer);
+      }
     }
     setStartModalOpen(true);
   };
@@ -168,7 +189,8 @@ const TripsListPage = () => {
   const handleVehicleSelectChange = (e) => {
     const val = e.target.value;
     setStartVehicleId(val);
-    const foundV = vehicles.find((v) => v._id === val);
+    setStartError('');
+    const foundV = vehicles.find((v) => String(v._id) === String(val));
     if (foundV) {
       setSelectedVehicle(foundV);
       setStartOdometer(foundV.currentOdometer);
@@ -179,8 +201,26 @@ const TripsListPage = () => {
     e.preventDefault();
     setStartError('');
 
-    if (!startVehicleId || !purpose) {
-      setStartError('Please select a vehicle and specify the trip purpose.');
+    if (!startVehicleId || !startVehicleId.trim()) {
+      setStartError('Please select a vehicle from the dropdown.');
+      return;
+    }
+
+    if (!purpose || !purpose.trim()) {
+      setStartError('Please select or enter the trip purpose.');
+      return;
+    }
+
+    const startOdoNum = Number(startOdometer);
+    if (startOdometer === '' || isNaN(startOdoNum)) {
+      setStartError('Please enter a valid starting odometer reading.');
+      return;
+    }
+
+    if (selectedVehicle && startOdoNum < selectedVehicle.currentOdometer) {
+      const msg = `Starting odometer (${startOdoNum} KM) cannot be lower than vehicle's current odometer (${selectedVehicle.currentOdometer} KM).`;
+      setStartError(msg);
+      toast.warning(msg);
       return;
     }
 
@@ -188,8 +228,8 @@ const TripsListPage = () => {
       setStartLoading(true);
       await API.post('/trips/start', {
         vehicleId: startVehicleId,
-        purpose,
-        startOdometer: Number(startOdometer),
+        purpose: purpose.trim(),
+        startOdometer: startOdoNum,
         tripType,
         notes: startNotes,
       });
@@ -631,7 +671,10 @@ const TripsListPage = () => {
                     <button
                       key={idx}
                       type="button"
-                      onClick={() => setPurpose(preset)}
+                      onClick={() => {
+                        setPurpose(preset);
+                        setStartError('');
+                      }}
                       className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer ${
                         isSelected
                           ? 'bg-indigo-600 text-white font-bold shadow-2xs'
@@ -649,7 +692,10 @@ const TripsListPage = () => {
               type="text"
               required
               value={purpose}
-              onChange={(e) => setPurpose(e.target.value)}
+              onChange={(e) => {
+                setPurpose(e.target.value);
+                setStartError('');
+              }}
               placeholder="e.g. Office Visit, Client Delivery, Personal Errands"
               className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
             />

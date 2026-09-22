@@ -150,9 +150,9 @@ const getWorker = async () => {
     if (!rawText) return [];
 
     const candidatesSet = new Set();
+    const initNum = Number(initialValue) || 0;
 
     // 1. Join spaced single-digit sequences (common in mechanical reel odometers like "6 5 0 9 4 0")
-    // Replaces digit sequences separated by single spaces (e.g. "6 5 0 9 4 0" -> "650940")
     const joinedSpacedText = rawText.replace(/\b(\d)\s+(\d)\s+(\d)\s+(\d)\s+(\d)(?:\s+(\d))?\b/g, (match) =>
       match.replace(/\s+/g, '')
     );
@@ -160,7 +160,7 @@ const getWorker = async () => {
     // 2. Extract all numeric tokens from both raw text and joined spaced text
     const rawTokens = (rawText + ' ' + joinedSpacedText).split(/[^0-9]+/);
 
-    // Common gear shift markers (1, 2, 3, 4 printed above dial) and speedometer scale steps
+    // Common gear shift markers and speedometer scale steps
     const gearShiftMarks = new Set(['1', '2', '3', '4', '5', '6']);
     const speedometerSteps = new Set(['0', '20', '40', '60', '80', '100', '120', '140', '160', '180', '200', '220']);
 
@@ -168,7 +168,7 @@ const getWorker = async () => {
       const cleaned = token.trim();
       if (cleaned.length >= 1) {
         candidatesSet.add(cleaned);
-        // If candidate is 6 digits long (e.g. 650940 with 6th digit tenths), automatically include the 5-digit main reading (65094)
+        // If candidate is 6 digits long, automatically include the 5-digit main reading
         if (cleaned.length === 6) {
           candidatesSet.add(cleaned.slice(0, 5));
         }
@@ -177,11 +177,25 @@ const getWorker = async () => {
 
     const uniqueTokens = Array.from(candidatesSet);
 
-    // Sort candidates by likelihood of being a real vehicle odometer reading:
-    // Highest Priority: 4 to 6 digit numbers that are NOT speedometer step marks or gear shift numbers
-    // Secondary Priority: Other multi-digit numbers
-    // Lowest Priority: Single gear numbers (1, 2, 3, 4) and dial marks (20, 40, 60, etc.)
+    // Sort candidates:
+    // 1st Priority: Numbers close to initial vehicle odometer reading (initNum <= val <= initNum + 20000)
+    // 2nd Priority: Valid 4 to 7 digit odometer numbers
+    // 3rd Priority: Non-noise numbers
+    // 4th Priority: Length
     uniqueTokens.sort((a, b) => {
+      const numA = Number(a);
+      const numB = Number(b);
+
+      const aCloseToInit = initNum > 0 && numA >= Math.max(0, initNum - 100) && numA <= initNum + 50000;
+      const bCloseToInit = initNum > 0 && numB >= Math.max(0, initNum - 100) && numB <= initNum + 50000;
+
+      if (aCloseToInit && !bCloseToInit) return -1;
+      if (!aCloseToInit && bCloseToInit) return 1;
+
+      if (aCloseToInit && bCloseToInit) {
+        return Math.abs(numA - initNum) - Math.abs(numB - initNum);
+      }
+
       const aIsOdometer = a.length >= 4 && a.length <= 7 && !speedometerSteps.has(a);
       const bIsOdometer = b.length >= 4 && b.length <= 7 && !speedometerSteps.has(b);
 
@@ -197,9 +211,8 @@ const getWorker = async () => {
       return b.length - a.length;
     });
 
-    // Exclude standalone gear shift marks (1, 2, 3, 4) if valid multi-digit odometer candidates exist
-    const hasLongCandidates = uniqueTokens.some((t) => t.length >= 4);
-    if (hasLongCandidates) {
+    const hasValidCandidates = uniqueTokens.some((t) => t.length >= 4 || (initNum > 0 && Number(t) >= Math.max(0, initNum - 100)));
+    if (hasValidCandidates) {
       return uniqueTokens.filter((t) => !gearShiftMarks.has(t) && !speedometerSteps.has(t));
     }
 
