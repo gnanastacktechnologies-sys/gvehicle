@@ -82,7 +82,7 @@ const MainLayout = ({ children }) => {
       >
         <div
           className={`flex items-center ${
-            sidebarCollapsed ? 'justify-center px-2' : 'justify-between px-5'
+            sidebarCollapsed ? 'justify-center px-2' : 'px-5'
           } h-16 border-b border-slate-100 flex-shrink-0`}
         >
           <div className="flex items-center space-x-3 overflow-hidden">
@@ -96,13 +96,6 @@ const MainLayout = ({ children }) => {
               </div>
             )}
           </div>
-          <button
-            onClick={toggleSidebar}
-            title={sidebarCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
-            className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer hidden md:block"
-          >
-            <FaBars className="w-4 h-4" />
-          </button>
         </div>
 
         {/* Menu Items with Isolated Scrolling */}
