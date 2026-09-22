@@ -163,47 +163,6 @@ const MainLayout = ({ children }) => {
         </div>
       </aside>
 
-      {/* Laptop / Desktop Top Header Bar with Menu Button */}
-      <header className="hidden md:flex sticky top-0 z-20 bg-white/90 backdrop-blur-md border-b border-slate-200 px-6 h-16 items-center justify-between shadow-2xs">
-        <div className="flex items-center space-x-4">
-          <button
-            onClick={toggleSidebar}
-            className="p-2.5 text-slate-700 bg-slate-100 hover:bg-slate-200 hover:text-indigo-600 rounded-xl transition-all cursor-pointer focus:outline-hidden"
-            title={sidebarCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
-            aria-label="Toggle Sidebar"
-          >
-            <FaBars className="w-5 h-5" />
-          </button>
-          <div className="flex items-center space-x-2">
-            <h2 className="text-base font-extrabold text-slate-800 tracking-tight">{currentPageTitle}</h2>
-          </div>
-        </div>
-
-        <div className="flex items-center space-x-3">
-          <Link
-            to="/profile"
-            className="flex items-center space-x-2.5 p-1.5 px-3 hover:bg-slate-100 rounded-xl transition-all cursor-pointer group"
-          >
-            <div className="w-8 h-8 rounded-full bg-indigo-600 text-white font-extrabold text-xs uppercase flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform">
-              {getInitials(user?.name)}
-            </div>
-            <div className="text-left">
-              <p className="text-xs font-bold text-slate-800 leading-tight group-hover:text-indigo-600 transition-colors">
-                {user?.name}
-              </p>
-              <p className="text-[10px] text-slate-400 capitalize leading-tight">{user?.role?.toLowerCase()}</p>
-            </div>
-          </Link>
-          <button
-            onClick={logout}
-            title="Logout"
-            className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all cursor-pointer"
-          >
-            <FaSignOutAlt className="w-4 h-4" />
-          </button>
-        </div>
-      </header>
-
       {/* Mobile Top Header - Left Aligned Menu Bar with 2-Letter Circle Profile Avatar */}
       <header className="md:hidden sticky top-0 z-40 bg-white border-b border-slate-200 px-3.5 h-16 flex items-center justify-between shadow-2xs">
         {/* Left Side: Menu Bar Icon & App Logo */}
@@ -318,6 +277,47 @@ const MainLayout = ({ children }) => {
           sidebarCollapsed ? 'md:pl-20' : 'md:pl-64'
         }`}
       >
+        {/* Laptop / Desktop Top Header Bar with Menu Toggle Button */}
+        <header className="hidden md:flex sticky top-0 z-20 bg-white border-b border-slate-200 px-6 h-16 items-center justify-between shadow-2xs w-full">
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={toggleSidebar}
+              className="p-2.5 text-slate-700 bg-slate-100 hover:bg-slate-200 hover:text-indigo-600 rounded-xl transition-all cursor-pointer focus:outline-hidden"
+              title={sidebarCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
+              aria-label="Toggle Sidebar"
+            >
+              <FaBars className="w-5 h-5" />
+            </button>
+            <div className="flex items-center space-x-2">
+              <h2 className="text-base font-extrabold text-slate-800 tracking-tight">{currentPageTitle}</h2>
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-3">
+            <Link
+              to="/profile"
+              className="flex items-center space-x-2.5 p-1.5 px-3 hover:bg-slate-100 rounded-xl transition-all cursor-pointer group"
+            >
+              <div className="w-8 h-8 rounded-full bg-indigo-600 text-white font-extrabold text-xs uppercase flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform">
+                {getInitials(user?.name)}
+              </div>
+              <div className="text-left">
+                <p className="text-xs font-bold text-slate-800 leading-tight group-hover:text-indigo-600 transition-colors">
+                  {user?.name}
+                </p>
+                <p className="text-[10px] text-slate-400 capitalize leading-tight">{user?.role?.toLowerCase()}</p>
+              </div>
+            </Link>
+            <button
+              onClick={logout}
+              title="Logout"
+              className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all cursor-pointer"
+            >
+              <FaSignOutAlt className="w-4 h-4" />
+            </button>
+          </div>
+        </header>
+
         <div className="p-4 sm:p-6 lg:p-8 flex-1 max-w-7xl w-full mx-auto">{children}</div>
         <footer className="py-4 text-center text-xs text-slate-400 font-medium border-t border-slate-200/60 mt-auto bg-white/50">
           Copyright © 2026 Gnanastack Technologies. All rights reserved.
