@@ -36,7 +36,28 @@ const FuelListPage = () => {
   const [formError, setFormError] = useState('');
   const [formLoading, setFormLoading] = useState(false);
 
+  // Preset Fuel Stations from Settings
+  const [presetFuelStations, setPresetFuelStations] = useState([
+    'IndianOil (IOCL)',
+    'Bharat Petroleum (BPCL)',
+    'Hindustan Petroleum (HPCL)',
+    'Shell',
+    'Nayara Energy',
+    'Reliance Petroleum',
+  ]);
+
   const { hasPermission, isAdmin } = useAuth();
+
+  const fetchPresetFuelStations = async () => {
+    try {
+      const res = await API.get('/settings');
+      if (res.data.data && Array.isArray(res.data.data.fuelStations)) {
+        setPresetFuelStations(res.data.data.fuelStations);
+      }
+    } catch (err) {
+      console.warn('Could not load settings presets:', err);
+    }
+  };
 
   const fetchFuel = async (page = 1) => {
     try {
@@ -71,6 +92,7 @@ const FuelListPage = () => {
   useEffect(() => {
     fetchFuel(1);
     fetchVehicles();
+    fetchPresetFuelStations();
   }, [vehicleId, fuelType]);
 
   const handleOpenAddModal = () => {
@@ -423,6 +445,44 @@ const FuelListPage = () => {
           <div className="p-3 bg-amber-50 border border-amber-100 rounded-xl flex justify-between items-center text-xs">
             <span className="text-amber-800 font-semibold">Calculated Rate / Litre:</span>
             <span className="text-base font-bold text-amber-700">₹{computedPricePerLitre} / L</span>
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-xs font-semibold text-slate-700">Fuel Station / Vendor</label>
+              <span className="text-[10px] text-slate-400 font-medium">Select preset or type custom</span>
+            </div>
+
+            {/* Preset Fuel Station Quick Select Chips */}
+            {presetFuelStations.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mb-2 max-h-24 overflow-y-auto p-1.5 bg-slate-50 border border-slate-200 rounded-xl">
+                {presetFuelStations.map((preset, idx) => {
+                  const isSelected = formData.fuelStation === preset;
+                  return (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => setFormData({ ...formData, fuelStation: preset })}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                        isSelected
+                          ? 'bg-amber-600 text-white font-bold shadow-2xs'
+                          : 'bg-white border border-slate-200 text-slate-700 hover:bg-amber-50 hover:text-amber-700'
+                      }`}
+                    >
+                      {preset}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            <input
+              type="text"
+              value={formData.fuelStation}
+              onChange={(e) => setFormData({ ...formData, fuelStation: e.target.value })}
+              placeholder="e.g. IndianOil (IOCL), Shell, BPCL"
+              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm"
+            />
           </div>
 
           <div className="flex justify-end space-x-3 pt-3 border-t border-slate-100">

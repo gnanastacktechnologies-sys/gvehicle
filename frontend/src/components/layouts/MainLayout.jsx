@@ -53,12 +53,12 @@ const MainLayout = ({ children }) => {
     { name: 'Personal Trips', path: '/personal-trips', icon: FaUser, perm: 'trips.view' },
     { name: 'Fuel Records', path: '/fuel', icon: FaGasPump, perm: 'fuel.view' },
     { name: 'Oil Changes', path: '/oil-changes', icon: FaOilCan, perm: 'oil.view' },
-    { name: 'Tyre Tracking', path: '/tyres', icon: FaCircleNotch, perm: 'tyres.view' },
+    { name: 'Tyre Records', path: '/tyres', icon: FaCircleNotch, perm: 'tyres.view' },
     { name: 'Maintenance', path: '/maintenance', icon: FaWrench, perm: 'maintenance.view' },
     { name: 'Users & Roles', path: '/users', icon: FaUsers, perm: 'users.view' },
     { name: 'Reports', path: '/reports', icon: FaChartBar, perm: 'reports.view' },
     { name: 'Audit Trail', path: '/audit-logs', icon: FaHistory, perm: 'audit.view' },
-    { name: 'App Settings', path: '/settings', icon: FaCog, perm: 'all' },
+    { name: 'Settings', path: '/settings', icon: FaCog, perm: 'all' },
     { name: 'My Profile', path: '/profile', icon: FaUserCircle, perm: 'all' },
   ];
 

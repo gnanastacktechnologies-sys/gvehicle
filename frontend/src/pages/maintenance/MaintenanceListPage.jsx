@@ -36,7 +36,27 @@ const MaintenanceListPage = () => {
   const [formError, setFormError] = useState('');
   const [formLoading, setFormLoading] = useState(false);
 
+  // Preset Service Providers from Settings
+  const [presetServiceProviders, setPresetServiceProviders] = useState([
+    'Authorized Dealer Service Center',
+    'Bosch Service Center',
+    'GoMechanic Workshop',
+    'Local Garage / Mechanic',
+    'In-house Fleet Workshop',
+  ]);
+
   const { hasPermission, isAdmin } = useAuth();
+
+  const fetchPresetServiceProviders = async () => {
+    try {
+      const res = await API.get('/settings');
+      if (res.data.data && Array.isArray(res.data.data.serviceProviders)) {
+        setPresetServiceProviders(res.data.data.serviceProviders);
+      }
+    } catch (err) {
+      console.warn('Could not load settings service providers:', err);
+    }
+  };
 
   const fetchRecords = async (page = 1) => {
     try {
@@ -72,6 +92,7 @@ const MaintenanceListPage = () => {
   useEffect(() => {
     fetchRecords(1);
     fetchVehicles();
+    fetchPresetServiceProviders();
   }, [search, vehicleId, maintenanceType]);
 
   const handleOpenAddModal = () => {
@@ -408,12 +429,39 @@ const MaintenanceListPage = () => {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">Service Provider</label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-xs font-semibold text-slate-700">Service Provider / Workshop</label>
+              <span className="text-[10px] text-slate-400 font-medium">Select preset or type custom</span>
+            </div>
+
+            {/* Preset Service Provider Quick Select Chips */}
+            {presetServiceProviders.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mb-2 max-h-24 overflow-y-auto p-1.5 bg-slate-50 border border-slate-200 rounded-xl">
+                {presetServiceProviders.map((preset, idx) => {
+                  const isSelected = formData.serviceProvider === preset;
+                  return (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => setFormData({ ...formData, serviceProvider: preset })}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                        isSelected
+                          ? 'bg-indigo-600 text-white font-bold shadow-2xs'
+                          : 'bg-white border border-slate-200 text-slate-700 hover:bg-indigo-50 hover:text-indigo-600'
+                      }`}
+                    >
+                      {preset}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
             <input
               type="text"
               value={formData.serviceProvider}
               onChange={(e) => setFormData({ ...formData, serviceProvider: e.target.value })}
-              placeholder="e.g. Bosch Car Service Center"
+              placeholder="e.g. Authorized Dealer, Bosch Service Center, Local Garage"
               className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm"
             />
           </div>

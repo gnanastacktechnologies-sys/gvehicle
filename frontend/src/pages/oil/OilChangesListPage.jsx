@@ -32,7 +32,30 @@ const OilChangesListPage = () => {
   const [formError, setFormError] = useState('');
   const [formLoading, setFormLoading] = useState(false);
 
+  // Preset Oil Brands from Settings
+  const [presetOilBrands, setPresetOilBrands] = useState([
+    'Castrol',
+    'Motul',
+    'Shell Helix',
+    'Gulf Oil',
+    'Servo (IOCL)',
+    'Mobil 1',
+    'TotalEnergies',
+    'Valvoline',
+  ]);
+
   const { hasPermission, isAdmin } = useAuth();
+
+  const fetchPresetOilBrands = async () => {
+    try {
+      const res = await API.get('/settings');
+      if (res.data.data && Array.isArray(res.data.data.oilBrands)) {
+        setPresetOilBrands(res.data.data.oilBrands);
+      }
+    } catch (err) {
+      console.warn('Could not load settings oil brands:', err);
+    }
+  };
 
   const fetchOil = async (page = 1) => {
     try {
@@ -66,6 +89,7 @@ const OilChangesListPage = () => {
   useEffect(() => {
     fetchOil(1);
     fetchVehicles();
+    fetchPresetOilBrands();
   }, [vehicleId]);
 
   const handleOpenAddModal = () => {
@@ -338,29 +362,54 @@ const OilChangesListPage = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Oil Brand</label>
-              <input
-                type="text"
-                value={formData.oilBrand}
-                onChange={(e) => setFormData({ ...formData, oilBrand: e.target.value })}
-                placeholder="Castrol, Mobil 1, Shell"
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm"
-              />
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-xs font-semibold text-slate-700">Engine Oil Brand</label>
+              <span className="text-[10px] text-slate-400 font-medium">Select preset or type custom</span>
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Service Cost (₹)</label>
-              <input
-                type="number"
-                min="0"
-                value={formData.cost}
-                onChange={(e) => setFormData({ ...formData, cost: e.target.value })}
-                placeholder="3500"
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm"
-              />
-            </div>
+            {/* Preset Oil Brand Quick Select Chips */}
+            {presetOilBrands.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mb-2 max-h-24 overflow-y-auto p-1.5 bg-slate-50 border border-slate-200 rounded-xl">
+                {presetOilBrands.map((preset, idx) => {
+                  const isSelected = formData.oilBrand === preset;
+                  return (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => setFormData({ ...formData, oilBrand: preset })}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                        isSelected
+                          ? 'bg-indigo-600 text-white font-bold shadow-2xs'
+                          : 'bg-white border border-slate-200 text-slate-700 hover:bg-indigo-50 hover:text-indigo-600'
+                      }`}
+                    >
+                      {preset}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            <input
+              type="text"
+              value={formData.oilBrand}
+              onChange={(e) => setFormData({ ...formData, oilBrand: e.target.value })}
+              placeholder="e.g. Castrol, Mobil 1, Shell Helix"
+              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">Service Cost (₹)</label>
+            <input
+              type="number"
+              min="0"
+              value={formData.cost}
+              onChange={(e) => setFormData({ ...formData, cost: e.target.value })}
+              placeholder="3500"
+              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm"
+            />
           </div>
 
           <div className="flex justify-end space-x-3 pt-3 border-t border-slate-100">

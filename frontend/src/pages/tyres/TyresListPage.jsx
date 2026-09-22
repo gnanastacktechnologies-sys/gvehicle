@@ -34,7 +34,30 @@ const TyresListPage = () => {
   const [formError, setFormError] = useState('');
   const [formLoading, setFormLoading] = useState(false);
 
+  // Preset Tyre Brands from Settings
+  const [presetTyreBrands, setPresetTyreBrands] = useState([
+    'MRF',
+    'CEAT',
+    'Apollo Tyres',
+    'TVS Eurogrip',
+    'JK Tyre',
+    'Bridgestone',
+    'Michelin',
+    'Goodyear',
+  ]);
+
   const { hasPermission, isAdmin } = useAuth();
+
+  const fetchPresetTyreBrands = async () => {
+    try {
+      const res = await API.get('/settings');
+      if (res.data.data && Array.isArray(res.data.data.tyreBrands)) {
+        setPresetTyreBrands(res.data.data.tyreBrands);
+      }
+    } catch (err) {
+      console.warn('Could not load settings tyre brands:', err);
+    }
+  };
 
   const fetchTyres = async (page = 1) => {
     try {
@@ -61,6 +84,7 @@ const TyresListPage = () => {
   useEffect(() => {
     fetchTyres(1);
     fetchVehicles();
+    fetchPresetTyreBrands();
   }, [vehicleId]);
 
   const handleOpenAddModal = () => {
@@ -219,8 +243,8 @@ const TyresListPage = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Tyre Installation & Odometer Tracking</h1>
-          <p className="text-xs text-slate-500 mt-1">Track tyre installations and current odometer replacement logs</p>
+          <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Tyre Records</h1>
+          <p className="text-xs text-slate-500 mt-1">Track tyre installations, replacements, and odometer logs</p>
         </div>
 
         {(hasPermission('tyres.create') || isAdmin) && (
@@ -313,28 +337,54 @@ const TyresListPage = () => {
             </select>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Brand *</label>
-              <input
-                type="text"
-                required
-                value={formData.brand}
-                onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
-                placeholder="Michelin, Bridgestone, MRF"
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm"
-              />
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-xs font-semibold text-slate-700">Tyre Brand / Manufacturer *</label>
+              <span className="text-[10px] text-slate-400 font-medium">Select preset or type custom</span>
             </div>
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Model</label>
-              <input
-                type="text"
-                value={formData.model}
-                onChange={(e) => setFormData({ ...formData, model: e.target.value })}
-                placeholder="Primacy 4ST"
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm"
-              />
-            </div>
+
+            {/* Preset Tyre Brand Quick Select Chips */}
+            {presetTyreBrands.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mb-2 max-h-24 overflow-y-auto p-1.5 bg-slate-50 border border-slate-200 rounded-xl">
+                {presetTyreBrands.map((preset, idx) => {
+                  const isSelected = formData.brand === preset;
+                  return (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => setFormData({ ...formData, brand: preset })}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                        isSelected
+                          ? 'bg-indigo-600 text-white font-bold shadow-2xs'
+                          : 'bg-white border border-slate-200 text-slate-700 hover:bg-indigo-50 hover:text-indigo-600'
+                      }`}
+                    >
+                      {preset}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            <input
+              type="text"
+              required
+              value={formData.brand}
+              onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
+              placeholder="e.g. MRF, CEAT, Apollo, Bridgestone"
+              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">Model</label>
+            <input
+              type="text"
+              value={formData.model}
+              onChange={(e) => setFormData({ ...formData, model: e.target.value })}
+              placeholder="e.g. Primacy 4ST, ZLX"
+              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm"
+            />
           </div>
 
           <div>

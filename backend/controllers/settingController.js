@@ -17,18 +17,24 @@ export const getSettings = async (req, res) => {
 // Update system settings
 export const updateSettings = async (req, res) => {
   try {
-    const { tripPurposes } = req.body;
+    const { tripPurposes, fuelStations, oilBrands, tyreBrands, serviceProviders } = req.body;
 
     let settings = await Setting.findOne({ key: 'app_settings' });
     if (!settings) {
       settings = new Setting({ key: 'app_settings' });
     }
 
-    if (Array.isArray(tripPurposes)) {
-      // Clean and sanitize string values
-      const cleaned = tripPurposes.map((p) => String(p).trim()).filter(Boolean);
-      settings.tripPurposes = Array.from(new Set(cleaned));
-    }
+    const sanitizeList = (list) => {
+      if (!Array.isArray(list)) return undefined;
+      const cleaned = list.map((p) => String(p).trim()).filter(Boolean);
+      return Array.from(new Set(cleaned));
+    };
+
+    if (tripPurposes !== undefined) settings.tripPurposes = sanitizeList(tripPurposes);
+    if (fuelStations !== undefined) settings.fuelStations = sanitizeList(fuelStations);
+    if (oilBrands !== undefined) settings.oilBrands = sanitizeList(oilBrands);
+    if (tyreBrands !== undefined) settings.tyreBrands = sanitizeList(tyreBrands);
+    if (serviceProviders !== undefined) settings.serviceProviders = sanitizeList(serviceProviders);
 
     await settings.save();
     res.json({ success: true, data: settings, message: 'Settings updated successfully' });
