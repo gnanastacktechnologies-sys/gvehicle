@@ -152,15 +152,16 @@ const getWorker = async () => {
     const candidatesSet = new Set();
     const initNum = Number(initialValue) || 0;
 
-    // 1. Join spaced single-digit sequences (common in mechanical reel odometers like "6 5 0 9 4 0")
-    const joinedSpacedText = rawText.replace(/\b(\d)\s+(\d)\s+(\d)\s+(\d)\s+(\d)(?:\s+(\d))?\b/g, (match) =>
-      match.replace(/\s+/g, '')
-    );
+    // 1. Join spaced digit sequences and strip dots/dashes (e.g. "1542 3" -> "15423", "1542.3" -> "15423")
+    const cleanedRaw = rawText.replace(/[\.\,\-\_]+/g, ' ');
+    const joinedSpacedText = cleanedRaw
+      .replace(/(\d)\s+(\d)/g, '$1$2')
+      .replace(/(\d)\s+(\d)/g, '$1$2')
+      .replace(/(\d)\s+(\d)/g, '$1$2');
 
-    // 2. Extract all numeric tokens from both raw text and joined spaced text
-    const rawTokens = (rawText + ' ' + joinedSpacedText).split(/[^0-9]+/);
+    // 2. Extract all numeric tokens from raw text, cleaned text, and joined text
+    const rawTokens = (rawText + ' ' + cleanedRaw + ' ' + joinedSpacedText).split(/[^0-9]+/);
 
-    // Common gear shift markers and speedometer scale steps
     const gearShiftMarks = new Set(['1', '2', '3', '4', '5', '6']);
     const speedometerSteps = new Set(['0', '20', '40', '60', '80', '100', '120', '140', '160', '180', '200', '220']);
 
@@ -168,17 +169,30 @@ const getWorker = async () => {
       const cleaned = token.trim();
       if (cleaned.length >= 1) {
         candidatesSet.add(cleaned);
-        // If candidate is 6 digits long, automatically include the 5-digit main reading
         if (cleaned.length === 6) {
           candidatesSet.add(cleaned.slice(0, 5));
         }
       }
     });
 
+    // If candidate has 4 digits (e.g. "1542") and a 1-digit token ("3") exists separately due to spacing/glare, combine them ("15423")
+    const initialTokens = Array.from(candidatesSet);
+    for (let i = 0; i < initialTokens.length; i++) {
+      const t1 = initialTokens[i];
+      if (t1.length === 4) {
+        for (let j = 0; j < initialTokens.length; j++) {
+          const t2 = initialTokens[j];
+          if (t2.length === 1) {
+            candidatesSet.add(t1 + t2);
+          }
+        }
+      }
+    }
+
     const uniqueTokens = Array.from(candidatesSet);
 
     // Sort candidates:
-    // 1st Priority: Numbers close to initial vehicle odometer reading (initNum <= val <= initNum + 20000)
+    // 1st Priority: Numbers close to initial vehicle odometer reading (initNum <= val <= initNum + 50000)
     // 2nd Priority: Valid 4 to 7 digit odometer numbers
     // 3rd Priority: Non-noise numbers
     // 4th Priority: Length
@@ -252,33 +266,33 @@ const getWorker = async () => {
     }
   };
 
-  // Capture Photo from Video Stream (Cropped to ROI Box)
+  // Capture Photo from Video Stream (Cropped to wide ROI Box with 1.5x scaling and contrast enhancement)
   const handleCapture = () => {
     if (!videoRef.current) return;
     const video = videoRef.current;
     const vWidth = video.videoWidth || 640;
     const vHeight = video.videoHeight || 480;
 
-    // Full frame canvas
-    const fullCanvas = document.createElement('canvas');
-    fullCanvas.width = vWidth;
-    fullCanvas.height = vHeight;
-    const ctx = fullCanvas.getContext('2d');
-    ctx.drawImage(video, 0, 0, vWidth, vHeight);
-
-    // Calculate crop box matching alignment box (inset-x-8 top-1/3 bottom-1/3)
-    const cropX = Math.floor(vWidth * 0.08); // 8% horizontal inset padding
-    const cropY = Math.floor(vHeight * 0.28); // 28% top inset padding
-    const cropW = Math.floor(vWidth * 0.84); // 84% box width
-    const cropH = Math.floor(vHeight * 0.44); // 44% box height
+    // Use full 98% width crop box so 5th & 6th rightmost digits are never clipped
+    const cropX = Math.floor(vWidth * 0.01);
+    const cropY = Math.floor(vHeight * 0.20);
+    const cropW = Math.floor(vWidth * 0.98);
+    const cropH = Math.floor(vHeight * 0.60);
 
     const cropCanvas = document.createElement('canvas');
-    cropCanvas.width = cropW;
-    cropCanvas.height = cropH;
+    // Upscale by 1.5x for higher OCR resolution
+    const scale = 1.5;
+    cropCanvas.width = Math.floor(cropW * scale);
+    cropCanvas.height = Math.floor(cropH * scale);
     const cropCtx = cropCanvas.getContext('2d');
-    cropCtx.drawImage(fullCanvas, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
 
-    const croppedDataUrl = cropCanvas.toDataURL('image/jpeg');
+    // Contrast & brightness enhancement for OCR accuracy
+    if ('filter' in cropCtx) {
+      cropCtx.filter = 'contrast(140%) brightness(105%)';
+    }
+    cropCtx.drawImage(video, cropX, cropY, cropW, cropH, 0, 0, cropCanvas.width, cropCanvas.height);
+
+    const croppedDataUrl = cropCanvas.toDataURL('image/jpeg', 0.95);
 
     stopCamera();
     setCapturedImage(croppedDataUrl);
@@ -347,7 +361,7 @@ const getWorker = async () => {
 
               {cameraActive && (
                 <>
-                  <div className="absolute inset-x-8 top-1/3 bottom-1/3 border-2 border-dashed border-amber-400/80 rounded-xl flex items-center justify-center bg-amber-400/10 backdrop-blur-[1px] pointer-events-none">
+                  <div className="absolute inset-x-2.5 top-1/4 bottom-1/4 border-2 border-dashed border-amber-400/80 rounded-xl flex items-center justify-center bg-amber-400/10 backdrop-blur-[1px] pointer-events-none">
                     <span className="text-[11px] font-bold text-white bg-slate-900/80 px-2 py-1 rounded-md shadow-xs">
                       Align Odometer Numbers Inside Box
                     </span>
