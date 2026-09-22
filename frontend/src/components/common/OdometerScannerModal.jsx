@@ -328,7 +328,7 @@ const getWorker = async () => {
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="📷 Scan Vehicle Odometer" maxWidth="max-w-lg">
+    <Modal isOpen={isOpen} onClose={onClose} title="📷 Scan Vehicle Odometer" maxWidth="max-w-lg" zIndex={80}>
       <div className="space-y-4">
         {error && (
           <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-center space-x-2 text-xs text-amber-800">

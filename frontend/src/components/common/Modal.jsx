@@ -3,7 +3,7 @@ import { FaTimes } from 'react-icons/fa';
 
 let activeModalsCount = 0;
 
-const Modal = ({ isOpen, onClose, title, children, maxWidth = 'max-w-lg' }) => {
+const Modal = ({ isOpen, onClose, title, children, maxWidth = 'max-w-lg', zIndex = 50 }) => {
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape' && isOpen) {
@@ -36,16 +36,23 @@ const Modal = ({ isOpen, onClose, title, children, maxWidth = 'max-w-lg' }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto overflow-x-hidden w-full max-w-full overscroll-contain">
+    <div
+      className="fixed inset-0 overflow-y-auto overflow-x-hidden w-full max-w-full touch-pan-y overscroll-contain"
+      style={{ zIndex }}
+    >
       {/* Backdrop */}
       <div
         className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity"
         onClick={onClose}
         aria-hidden="true"
+        style={{ zIndex }}
       />
 
       {/* Modal Container */}
-      <div className="flex min-h-full items-center justify-center p-2 sm:p-4 text-center overscroll-contain w-full max-w-full overflow-x-hidden">
+      <div
+        className="flex min-h-full items-center justify-center p-2 sm:p-4 text-center overscroll-contain w-full max-w-full overflow-x-hidden relative"
+        style={{ zIndex: zIndex + 10 }}
+      >
         <div
           className={`relative w-full max-w-[95vw] ${maxWidth} transform overflow-hidden rounded-2xl bg-white p-4 sm:p-6 text-left align-middle shadow-2xl transition-all border border-slate-100 my-auto`}
         >
@@ -63,7 +70,12 @@ const Modal = ({ isOpen, onClose, title, children, maxWidth = 'max-w-lg' }) => {
           </div>
 
           {/* Modal Body */}
-          <div className="max-h-[80vh] overflow-y-auto overflow-x-hidden overscroll-contain pr-0.5 space-y-2 w-full">{children}</div>
+          <div
+            className="max-h-[75vh] sm:max-h-[80vh] overflow-y-auto overflow-x-hidden overscroll-contain touch-pan-y pr-0.5 space-y-2 w-full"
+            style={{ WebkitOverflowScrolling: 'touch' }}
+          >
+            {children}
+          </div>
         </div>
       </div>
     </div>
