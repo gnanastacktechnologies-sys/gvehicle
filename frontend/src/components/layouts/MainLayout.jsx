@@ -58,6 +58,7 @@ const MainLayout = ({ children }) => {
     { name: 'Users & Roles', path: '/users', icon: FaUsers, perm: 'users.view' },
     { name: 'Reports', path: '/reports', icon: FaChartBar, perm: 'reports.view' },
     { name: 'Audit Trail', path: '/audit-logs', icon: FaHistory, perm: 'audit.view' },
+    { name: 'App Settings', path: '/settings', icon: FaCog, perm: 'all' },
     { name: 'My Profile', path: '/profile', icon: FaUserCircle, perm: 'all' },
   ];
 

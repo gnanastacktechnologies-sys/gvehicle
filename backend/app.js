@@ -15,6 +15,7 @@ import maintenanceRoutes from './routes/maintenanceRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
 import reportRoutes from './routes/reportRoutes.js';
 import auditRoutes from './routes/auditRoutes.js';
+import settingRoutes from './routes/settingRoutes.js';
 
 import { notFoundHandler, errorHandler } from './middleware/errorMiddleware.js';
 
@@ -58,6 +59,7 @@ app.use('/api/maintenance', maintenanceRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/audit-logs', auditRoutes);
+app.use('/api/settings', settingRoutes);
 
 // Serve Frontend Production Assets (Single Port 17203 Mode)
 const frontendDistPath = path.join(__dirname, '../frontend/dist');

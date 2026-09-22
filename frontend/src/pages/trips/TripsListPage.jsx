@@ -39,6 +39,18 @@ const TripsListPage = () => {
   const [startError, setStartError] = useState('');
   const [startLoading, setStartLoading] = useState(false);
 
+  // Preset Trip Purposes from Settings
+  const [presetPurposes, setPresetPurposes] = useState([
+    'Office Commute',
+    'Client Meeting',
+    'Customer Delivery',
+    'Site Visit',
+    'Vendor Visit',
+    'Emergency Maintenance',
+    'Personal Ride',
+    'Refueling / Fuel Station Visit',
+  ]);
+
   // Stop Ride Modal State
   const [stopModalOpen, setStopModalOpen] = useState(false);
   const [activeTripToStop, setActiveTripToStop] = useState(null);
@@ -87,18 +99,21 @@ const TripsListPage = () => {
     }
   };
 
-  const fetchActiveVehicles = async () => {
+  const fetchPresetPurposes = async () => {
     try {
-      const res = await API.get('/vehicles?status=ACTIVE&limit=100');
-      setVehicles(res.data.data);
+      const res = await API.get('/settings');
+      if (res.data.data && Array.isArray(res.data.data.tripPurposes)) {
+        setPresetPurposes(res.data.data.tripPurposes);
+      }
     } catch (err) {
-      console.error('Failed to fetch vehicles for dropdown:', err);
+      console.warn('Could not load settings presets:', err);
     }
   };
 
   useEffect(() => {
     fetchTrips(1);
     fetchActiveVehicles();
+    fetchPresetPurposes();
   }, [search, vehicleId, status, tripTypeFilter, startDate, endDate]);
 
   // Handle URL searchParams triggers (e.g. ?action=start or ?startVehicleId=123)
@@ -593,14 +608,41 @@ const TripsListPage = () => {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">Trip Purpose *</label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-xs font-semibold text-slate-700">Trip Purpose *</label>
+              <span className="text-[10px] text-slate-400 font-medium">Select preset or type custom</span>
+            </div>
+
+            {/* Preset Purpose Quick Select Chips */}
+            {presetPurposes.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mb-2 max-h-24 overflow-y-auto p-1.5 bg-slate-50 border border-slate-200 rounded-xl">
+                {presetPurposes.map((preset, idx) => {
+                  const isSelected = purpose === preset;
+                  return (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => setPurpose(preset)}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                        isSelected
+                          ? 'bg-indigo-600 text-white font-bold shadow-2xs'
+                          : 'bg-white border border-slate-200 text-slate-700 hover:bg-indigo-50 hover:text-indigo-600'
+                      }`}
+                    >
+                      {preset}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
             <input
               type="text"
               required
               value={purpose}
               onChange={(e) => setPurpose(e.target.value)}
               placeholder="e.g. Office Visit, Client Delivery, Personal Errands"
-              className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm"
+              className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
             />
           </div>
 
