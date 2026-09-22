@@ -36,7 +36,7 @@ const OdometerInputWithScan = ({
           className="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition-all cursor-pointer flex-shrink-0 disabled:opacity-50 shadow-sm shadow-indigo-100"
         >
           <FaCamera className="w-3.5 h-3.5 text-white" />
-          <span>Scan 📷</span>
+          <span>Scan Odometer</span>
         </button>
       </div>
 

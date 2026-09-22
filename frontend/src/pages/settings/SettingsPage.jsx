@@ -316,18 +316,6 @@ const SettingsPage = () => {
           )}
         </div>
       </div>
-
-      {/* Bottom Action Footer */}
-      <div className="flex justify-end pt-2">
-        <button
-          onClick={handleSaveSettings}
-          disabled={saving}
-          className="inline-flex items-center justify-center space-x-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-md shadow-indigo-100 transition-all cursor-pointer disabled:opacity-50"
-        >
-          <FaSave className="w-4 h-4" />
-          <span>{saving ? 'Saving System Settings...' : 'Save All Settings'}</span>
-        </button>
-      </div>
     </div>
   );
 };
