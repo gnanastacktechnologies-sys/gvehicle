@@ -1,7 +1,15 @@
 import axios from 'axios';
 
+const getApiBaseUrl = () => {
+  const envUrl = import.meta.env.VITE_API_URL;
+  if (!envUrl || envUrl.includes('onrender.com') || envUrl === '/api') {
+    return 'https://gvehicle-q78g.vercel.app/api';
+  }
+  return envUrl;
+};
+
 const API = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'https://gvehicle-q78g.vercel.app/api',
+  baseURL: getApiBaseUrl(),
   headers: {
     'Content-Type': 'application/json',
   },
