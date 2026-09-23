@@ -72,7 +72,7 @@ app.use(async (req, res, next) => {
 });
 
 // 24/7 Health Check & Serverless Health Endpoints
-app.get(['/health', '/api/health'], (req, res) => {
+app.get(['/', '/health', '/api/health'], (req, res) => {
   res.status(200).json({
     status: 'UP',
     uptime: `${Math.floor(process.uptime())}s`,
